@@ -23,4 +23,31 @@ describe('course content', () => {
       }
     }
   });
+
+  it('generates a valid fill-blank task for every lesson', () => {
+    for (const course of courses) {
+      for (const module of course.modules) {
+        for (const lesson of module.lessons) {
+          expect(lesson.fillBlank.code).toContain('____');
+          expect(lesson.fillBlank.answer.trim().length).toBeGreaterThan(0);
+          expect(lesson.fillBlank.instruction.length).toBeGreaterThan(20);
+          expect(lesson.fillBlank.hint.length).toBeGreaterThan(10);
+        }
+      }
+    }
+  });
+
+  it('builds three-option quiz questions with varied correct positions', () => {
+    const allQuestions = courses.flatMap((course) =>
+      course.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.quiz))
+    );
+
+    for (const question of allQuestions) {
+      expect(question.options).toHaveLength(3);
+      expect(question.options.map((option) => option.id)).toContain(question.correctOptionId);
+    }
+
+    const correctPositions = new Set(allQuestions.map((question) => question.correctOptionId));
+    expect(correctPositions.size).toBeGreaterThan(1);
+  });
 });
