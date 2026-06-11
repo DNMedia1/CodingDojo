@@ -59,6 +59,7 @@ export function LessonPage() {
   const blankComplete = blankState === 'correct' || completed;
   const courseLessons = course.modules.flatMap((module) => module.lessons);
   const nextLesson = courseLessons[courseLessons.findIndex((item) => item.id === lesson.id) + 1];
+  const stepProgress = ((step + 1) / lessonSteps.length) * 100;
 
   const finish = () => {
     if (completed) {
@@ -112,15 +113,60 @@ export function LessonPage() {
   return (
     <div>
       <Header title={lesson.title} subtitle={`${course.title} · ${lesson.estimatedMinutes} min · ${lesson.xp} XP`} />
-      <div className="mb-4 grid grid-cols-6 gap-1.5">
+      <div className="mb-4 flex gap-2">
+        <Link to={`/courses/${course.id}`} className="flex min-h-10 items-center justify-center rounded-2xl border border-white/10 bg-panel px-4 text-sm font-extrabold text-muted">
+          Kurs
+        </Link>
+        <Link to="/" className="flex min-h-10 items-center justify-center rounded-2xl border border-white/10 bg-panel px-4 text-sm font-extrabold text-muted">
+          Start
+        </Link>
+      </div>
+      <div className="mb-4 grid grid-cols-6 gap-1.5 lg:hidden">
         {lessonSteps.map((label, index) => (
           <button key={label} onClick={() => setStep(index)} className={`h-10 rounded-xl px-1 text-[11px] font-extrabold ${step === index ? 'bg-text text-ink' : 'bg-panel text-muted'}`}>
             {label}
           </button>
         ))}
       </div>
+      <div className="mb-4 rounded-2xl border border-white/10 bg-panel/70 p-3">
+        <div className="mb-2 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em] text-muted">
+          <span>{lessonSteps[step]}</span>
+          <span>{step + 1}/{lessonSteps.length}</span>
+        </div>
+        <ProgressBar value={stepProgress} accent={course.accent} />
+      </div>
 
-      <section className="rounded-3xl border border-white/10 bg-panel p-5 shadow-glow">
+      <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-8 rounded-3xl border border-white/10 bg-panel/90 p-5 shadow-glow">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">Lektionsschritte</p>
+            <div className="mt-4 grid gap-2">
+              {lessonSteps.map((label, index) => (
+                <button
+                  key={label}
+                  onClick={() => setStep(index)}
+                  className={`flex min-h-11 items-center justify-between rounded-2xl px-3 text-left text-sm font-extrabold ${
+                    step === index ? 'bg-text text-ink' : index < step ? 'bg-emerald-300/10 text-emerald-100' : 'bg-white/5 text-muted'
+                  }`}
+                >
+                  <span>{label}</span>
+                  <span className="text-xs">{index + 1}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-sm font-extrabold">Zum Abschliessen</p>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+                <li>{blankComplete ? '✓' : '·'} Lücke lösen</li>
+                <li>{quizComplete ? '✓' : '·'} Quiz beantworten</li>
+                <li>{codingComplete ? '✓' : '·'} Code-Check bestehen</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <div className="min-w-0">
+      <section className="rounded-3xl border border-white/10 bg-panel p-5 shadow-glow lg:p-7">
         {step === 0 ? (
           <div>
             <h2 className="text-xl font-black">Verstehe die Idee</h2>
@@ -291,6 +337,8 @@ export function LessonPage() {
         )}
       </div>
       <Link to={`/courses/${course.id}`} className="mt-4 block text-center text-sm font-bold text-muted">Zurück zu {course.title}</Link>
+        </div>
+      </div>
 
       {finishResult ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/85 backdrop-blur-sm">
