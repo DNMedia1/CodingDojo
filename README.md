@@ -39,10 +39,11 @@ npm run preview
 Version 1 läuft komplett lokal und fühlt sich auf dem Smartphone wie eine App an:
 
 - Dashboard mit Weiterlernen-Karte
-- sechs Kurs-Tracks: Python, C#, Java, HTML, CSS, JavaScript
+- sieben Kurs-Tracks: Python, C#, Java, HTML, CSS, JavaScript und AI Automation
 - drei Module pro Kurs
 - drei Lektionen pro Modul
-- jede Lektion enthält Theorie, Codebeispiel, zwei Quizfragen und eine Praxisaufgabe
+- jede Lektion enthält Theorie, Codebeispiel, zwei Quizfragen, eine Schreibaufgabe und eine Praxisaufgabe
+- lokales Code-Feedback für fast richtige Lösungen mit Syntaxhinweisen, Konzeptchecks und Fortschrittswert
 - Quizmodus mit Schwierigkeitsfiltern und Wiederholung falscher Fragen
 - XP, Level, Streak, Tagesziel und Kursfortschritt
 - Praxisprojekte mit Anforderungen, Hinweisen und Lösungsnotizen
@@ -54,7 +55,9 @@ Version 1 läuft komplett lokal und fühlt sich auf dem Smartphone wie eine App 
 
 Kursinhalte liegen in `src/data/courses.ts` und nutzen die Domain-Modelle aus `src/models/learning.ts`. Die Fortschrittslogik liegt in `src/services/progressService.ts`; `src/store/ProgressContext.tsx` verbindet sie mit React und localStorage.
 
-Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring und Fortschrittsregeln liegen in Services.
+Die Code-Schreibaufgaben werden aus den Kursdaten erzeugt und in `src/services/codeFeedbackService.ts` lokal geprüft. Die Prüfung ersetzt keine echte Sandbox, gibt aber sofort Hilfe bei offenen Klammern, fehlenden Strings und wichtigen Konzepten wie `return`, `fetch`, semantischem HTML oder Automation-Feldern wie `trigger` und `steps`.
+
+Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring, Code-Feedback und Fortschrittsregeln liegen in Services.
 
 ## Backend-Roadmap
 
@@ -80,9 +83,10 @@ Mögliche API-Struktur:
 Version 3 kann ergänzen:
 
 - KI-Tutor
-- Codeanalyse
+- tiefere Codeanalyse mit Parsern oder sicherer Sandbox
 - personalisierte Lernpfade
-- echte Coding Sandbox
+- echte Coding Sandbox für Python, JavaScript und später weitere Sprachen
+- Automation-Lab mit Make/Zapier/n8n-ähnlichen Workflow-Übungen
 - Zertifikate
 - bewerbungsorientierte Lernpfade
 
