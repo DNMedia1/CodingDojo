@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { LanguageId, QuizAnswer, ThemeMode, UserProgress } from '../models/learning';
-import { calculateLevel, completeLesson, defaultProgress, gradeQuiz, loadProgress, saveProgress } from '../services/progressService';
+import { localProgressRepository } from '../services/progressRepository';
+import { calculateLevel, completeLesson, defaultProgress, gradeQuiz } from '../services/progressService';
 
 type ProgressContextValue = {
   progress: UserProgress;
@@ -15,10 +16,10 @@ type ProgressContextValue = {
 const ProgressContext = createContext<ProgressContextValue | null>(null);
 
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
-  const [progress, setProgress] = useState<UserProgress>(() => loadProgress());
+  const [progress, setProgress] = useState<UserProgress>(() => localProgressRepository.load());
 
   useEffect(() => {
-    saveProgress(progress);
+    localProgressRepository.save(progress);
     document.documentElement.dataset.theme = progress.theme;
   }, [progress]);
 
@@ -28,8 +29,12 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       levelInfo: calculateLevel(progress.xp),
       complete: (courseId, lessonId, xp) => setProgress((current) => completeLesson(current, courseId, lessonId, xp)),
       submitQuiz: (answers) => {
-        const result = gradeQuiz(answers, progress);
-        setProgress(result.nextProgress);
+        let result: ReturnType<typeof gradeQuiz> | null = null;
+        setProgress((current) => {
+          result = gradeQuiz(answers, current);
+          return result.nextProgress;
+        });
+        if (!result) throw new Error('Quiz submission failed');
         return result;
       },
       updateProfile: (displayName, dailyGoal) => setProgress((current) => ({ ...current, displayName, dailyGoal })),
