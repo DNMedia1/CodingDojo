@@ -27,6 +27,21 @@ export interface PracticeTask {
   hint: string;
 }
 
+export interface CodingConceptCheck {
+  id: string;
+  label: string;
+  pattern: string;
+  hint: string;
+}
+
+export interface CodingChallenge {
+  prompt: string;
+  language: string;
+  starterCode: string;
+  solution: string;
+  requiredConcepts: CodingConceptCheck[];
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -36,6 +51,7 @@ export interface Lesson {
   codeExample: CodeExample;
   quiz: QuizQuestion[];
   practice: PracticeTask;
+  codingChallenge?: CodingChallenge;
 }
 
 export interface CourseModule {
