@@ -15,11 +15,11 @@ export function ModulePage() {
   return (
     <div>
       <Header title={module.title} subtitle={module.description} />
-      <div className="space-y-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         {module.lessons.map((lesson) => {
           const completed = isLessonCompleted(progress, course.id, lesson.id);
           return (
-            <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block rounded-2xl border border-white/10 bg-panel p-4">
+            <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block rounded-2xl border border-white/10 bg-panel p-4 transition hover:-translate-y-0.5 hover:border-white/20">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-extrabold">{lesson.title}</h2>

@@ -87,7 +87,7 @@ export function DashboardPage() {
           <h2 className="text-xl font-black">Lernpfade</h2>
           <Link to="/courses" className="text-sm font-bold text-sky-200">Alle anzeigen</Link>
         </div>
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {courses.slice(0, 3).map((course) => <CourseCard key={course.id} course={course} />)}
         </div>
       </section>

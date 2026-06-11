@@ -29,11 +29,11 @@ export function CourseDetailPage() {
         </div>
       </section>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {course.modules.map((module, index) => {
           const completed = module.lessons.filter((lesson) => progress.completedLessons[course.id]?.includes(lesson.id)).length;
           return (
-            <Link key={module.id} to={`/courses/${course.id}/modules/${module.id}`} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-panel p-4">
+            <Link key={module.id} to={`/courses/${course.id}/modules/${module.id}`} className="flex min-h-[116px] items-center gap-4 rounded-2xl border border-white/10 bg-panel p-4 transition hover:-translate-y-0.5 hover:border-white/20">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 font-black">{index + 1}</div>
               <div className="min-w-0 flex-1">
                 <h2 className="font-extrabold">{module.title}</h2>
