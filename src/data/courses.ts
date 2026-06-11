@@ -1,4 +1,4 @@
-import type { Course, CourseModule, Difficulty, LanguageId, Lesson } from '../models/learning';
+import type { CodingConceptCheck, Course, CourseModule, Difficulty, LanguageId, Lesson } from '../models/learning';
 
 type LessonSeed = {
   title: string;
@@ -130,6 +130,23 @@ const courseSeeds: CourseSeed[] = [
       lesson('Express Routes', 'Express-Handler sollten Eingaben validieren, Service-Logik aufrufen und klare Statuscodes senden. Schlanke Routen lassen sich später leichter ersetzen.', 'app.get("/api/health", (req, res) => {\n  res.json({ status: "ok" });\n});', 'Erstelle eine Express-Route für Kurslisten.', 'Antworte mit res.json.', 'HTML an API-Clients senden.'),
       lesson('Async/Await', 'async und await machen Promise-Code linear lesbar. Trotzdem musst du Fehler behandeln, weil asynchrone Fehler als abgelehnte Promises weiterlaufen.', 'async function completeLesson(id) {\n  try {\n    return await api.complete(id);\n  } catch (error) {\n    console.error(error);\n    throw error;\n  }\n}', 'Schreibe eine async Funktion zum Speichern von Progress.', 'Catch, logge und wirf weiter, wenn Caller reagieren sollen.', 'Fehler still verschlucken.', 'intermediate')
     ])
+  ]),
+  course('automation', 'AI Automation', 'AI', 'No-Code-Flows, Webhooks, KI-Tools und agentische Workflows praxisnah modellieren.', '#7dd3fc', 'from-[#7dd3fc] to-[#8b5cf6]', 'AI', 'json', [
+    module('Automation-Grundlagen', 'Trigger, Actions und Datenmapping wie in Make, Zapier oder n8n denken.', [
+      lesson('Trigger und Actions', 'Eine Automation startet mit einem Trigger und führt danach klar getrennte Actions aus. Gute Flows sind klein, beobachtbar und haben eindeutige Eingaben, damit Fehler schnell gefunden werden.', '{\n  "trigger": "new_lead",\n  "action": "create_task",\n  "target": "crm"\n}', 'Modelliere eine Automation, die aus einem neuen Lead automatisch eine CRM-Aufgabe erzeugt.', 'Trenne Auslöser, Aktion und Zielsystem klar.', 'Alles in einen riesigen unbenannten Flow packen.'),
+      lesson('Datenmapping', 'Datenmapping übersetzt Felder zwischen Tools. Wenn Namen, E-Mail und IDs sauber gemappt sind, bleibt der Flow stabil, auch wenn später weitere Systeme angeschlossen werden.', '{\n  "email": "{{lead.email}}",\n  "name": "{{lead.firstName}} {{lead.lastName}}",\n  "sourceId": "{{lead.id}}"\n}', 'Mappe Lead-Daten auf ein Kontaktobjekt mit Name, E-Mail und externer ID.', 'Dokumentiere jedes gemappte Feld bewusst.', 'Felder blind kopieren und hoffen, dass Typen passen.'),
+      lesson('Webhooks', 'Webhooks verbinden Systeme ereignisbasiert. Wichtig sind Methode, URL, Payload und eine prüfbare Antwort, damit Automationen nicht still im Hintergrund scheitern.', '{\n  "method": "POST",\n  "url": "https://example.com/webhook",\n  "body": { "event": "lesson.completed" }\n}', 'Entwirf einen Webhook-Payload, der einen abgeschlossenen Kurs an ein anderes Tool sendet.', 'Sende strukturierte Events statt Freitext.', 'API-Keys direkt in sichtbare Payloads schreiben.')
+    ]),
+    module('KI-Automation', 'Prompts, Tool Calling und menschliche Freigaben sicher einsetzen.', [
+      lesson('Prompt Inputs', 'KI-Automationen brauchen kontrollierte Eingaben. Ein guter Prompt trennt Rolle, Aufgabe und Daten, damit das Modell wiederholbar arbeitet und keine stillen Annahmen trifft.', '{\n  "role": "system",\n  "content": "Summarize customer requests as tasks.",\n  "input": "{{ticket.text}}"\n}', 'Beschreibe einen Prompt-Schritt, der Supporttickets zu Aufgaben zusammenfasst.', 'Trenne System-Anweisung und dynamische Eingabe.', 'Userdaten direkt ohne Kontext in den Prompt werfen.'),
+      lesson('Tool Calling', 'Tool Calling macht KI nützlich, weil das Modell eine konkrete Aktion auslösen kann. Parameter müssen klein, typisiert und prüfbar sein, sonst wird der Workflow unzuverlässig.', '{\n  "name": "create_task",\n  "parameters": {\n    "title": "Follow up",\n    "priority": "high"\n  }\n}', 'Modelliere einen Tool-Call, der aus einer KI-Zusammenfassung eine Aufgabe erstellt.', 'Definiere Tool-Name und Parameter explizit.', 'Das Modell beliebige Freitext-Aktionen ausführen lassen.'),
+      lesson('Human in the Loop', 'Bei riskanten Aktionen sollte ein Mensch freigeben, bevor etwas gesendet, gelöscht oder gekauft wird. Human-in-the-loop macht Automationen produktiv, ohne Kontrolle zu verlieren.', '{\n  "draft": "Approve before sending",\n  "requiresApproval": true,\n  "approver": "team_lead"\n}', 'Baue einen Freigabeschritt für eine automatisch formulierte Kundenantwort.', 'Kennzeichne riskante Aktionen mit Approval.', 'Jede KI-Antwort sofort ungeprüft versenden.', 'intermediate')
+    ]),
+    module('Agentic Workflows', 'Mehrschrittige Workflows planen, überwachen und absichern.', [
+      lesson('Planen und Ausführen', 'Agentische Workflows zerlegen ein Ziel in Schritte und nutzen Tools nacheinander. Gute Agents haben ein klares Ziel, begrenzte Tools und sichtbare Zwischenergebnisse.', '{\n  "goal": "Prepare meeting brief",\n  "steps": ["search_crm", "summarize_notes", "draft_email"]\n}', 'Skizziere einen Agent-Workflow, der ein Meeting-Briefing vorbereitet.', 'Halte Ziel, Schritte und Tool-Namen sichtbar.', 'Dem Agent ohne Grenzen Zugriff auf alles geben.'),
+      lesson('Fehlerbehandlung', 'Automation ist erst produktionsreif, wenn Fehlerwege geplant sind. Retries, Benachrichtigungen und Abbruchbedingungen verhindern doppelte Aktionen und stille Datenverluste.', '{\n  "onError": "retry_then_notify",\n  "maxRetries": 2,\n  "notify": "ops_channel"\n}', 'Definiere eine Fehlerstrategie für einen fehlgeschlagenen API-Schritt.', 'Begrenze Retries und informiere ein Team.', 'Endlos wiederholen, bis niemand mehr weiss warum.'),
+      lesson('Logging und Sicherheit', 'Logs helfen beim Debuggen, dürfen aber keine sensiblen Daten verraten. Gute Workflows protokollieren Trigger, Tool und Ergebnis und maskieren Tokens, E-Mails oder Kundendaten.', '{\n  "log": ["trigger", "tool", "result"],\n  "redact": ["apiKey", "email", "customerNote"]\n}', 'Erstelle ein Logging-Konzept, das Ergebnisse sichtbar macht und sensible Felder maskiert.', 'Logge prüfbare Schritte und maskiere Geheimnisse.', 'Komplette Prompts und API-Keys in Logs speichern.', 'intermediate')
+    ])
   ])
 ];
 
@@ -153,6 +170,122 @@ function module(title: string, description: string, lessons: LessonSeed[]): Modu
 
 function lesson(title: string, theory: string, code: string, task: string, bestPractice: string, trap: string, difficulty: Difficulty = 'basic'): LessonSeed {
   return { title, theory, code, task, bestPractice, trap, difficulty };
+}
+
+function buildCodingChallenge(courseSeed: CourseSeed, lessonSeed: LessonSeed) {
+  return {
+    prompt: `Schreibe selbst Code zur Aufgabe: ${lessonSeed.task}`,
+    language: courseSeed.codeLanguage,
+    starterCode: starterCodeFor(courseSeed.codeLanguage),
+    solution: lessonSeed.code,
+    requiredConcepts: buildConceptChecks(lessonSeed.code, lessonSeed.bestPractice)
+  };
+}
+
+function starterCodeFor(language: string) {
+  const starterByLanguage: Record<string, string> = {
+    python: '# Write your solution here\n',
+    csharp: '// Write your solution here\n',
+    java: '// Write your solution here\n',
+    html: '<!-- Write your markup here -->\n',
+    css: '/* Write your styles here */\n',
+    javascript: '// Write your solution here\n',
+    json: '{\n  "workflow": ""\n}\n'
+  };
+
+  return starterByLanguage[language] ?? '// Write your solution here\n';
+}
+
+function buildConceptChecks(code: string, bestPractice: string): CodingConceptCheck[] {
+  const normalizedCode = code.toLowerCase();
+  const preferredPatterns = [
+    'def ',
+    'return',
+    'class ',
+    'for ',
+    'if ',
+    'from ',
+    '@app',
+    'fastapi',
+    'sqlmodel',
+    'string',
+    'int',
+    'bool',
+    'console.writeline',
+    'static',
+    'list<',
+    'where',
+    'select',
+    'webapplication',
+    'mapget',
+    'controllerbase',
+    'system.out.println',
+    'list.of',
+    'private final',
+    'stream',
+    '@restcontroller',
+    '@service',
+    'responseentity',
+    '<main',
+    '<article',
+    '<nav',
+    '<img',
+    '<label',
+    '<input',
+    '<button',
+    '<section',
+    '<table',
+    '<meta',
+    'display: flex',
+    'display: grid',
+    '@media',
+    'transition',
+    'animation',
+    'class=',
+    'const',
+    'document.queryselector',
+    'addeventlistener',
+    'fetch',
+    'response.ok',
+    'type ',
+    'function',
+    'defineprops',
+    'export function',
+    'app.get',
+    'async function',
+    'try',
+    'catch',
+    '"trigger"',
+    '"action"',
+    '"email"',
+    '"method"',
+    '"url"',
+    '"role"',
+    '"input"',
+    '"name"',
+    '"parameters"',
+    '"requiresapproval"',
+    '"goal"',
+    '"steps"',
+    '"onerror"',
+    '"maxretries"',
+    '"log"',
+    '"redact"'
+  ];
+  const selectedPatterns = preferredPatterns.filter((pattern) => normalizedCode.includes(pattern)).slice(0, 3);
+  const fallbackPatterns = code
+    .replace(/[{}()[\];,]/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length >= 4 && !selectedPatterns.some((pattern) => pattern.includes(token.toLowerCase())))
+    .slice(0, 3 - selectedPatterns.length);
+  const patterns = [...selectedPatterns, ...fallbackPatterns].slice(0, 3);
+
+  return patterns.map((pattern, index) => ({
+    id: `concept-${index + 1}`,
+    label: pattern.replace(/["'<>]/g, '').trim(),
+    pattern,
+    hint: `${bestPractice} Achte besonders auf "${pattern.replace(/"/g, '')}".`
+  }));
 }
 
 export const courses: Course[] = courseSeeds.map((courseSeed) => ({
@@ -202,7 +335,8 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
           prompt: lessonSeed.task,
           checklist: ['Benenne Daten und Verhalten klar.', 'Implementiere zuerst den normalen Fall.', 'Füge ein kleines Beispiel hinzu, das die Lösung beweist.'],
           hint: lessonSeed.bestPractice
-        }
+        },
+        codingChallenge: buildCodingChallenge(courseSeed, lessonSeed)
       };
     })
   }))

@@ -110,5 +110,27 @@ export const projects: PracticeProject[] = [
     requirements: ['Nutze async/await.', 'Prüfe response.ok.', 'Zeige Retry nach Fehlern.'],
     hints: ['Schreibe einen Fetch Helper.', 'Halte Loading State explizit.'],
     solutionNotes: ['Zuverlässige UI entsteht vor allem durch klares State Modeling.']
+  },
+  {
+    id: 'automation-lead-router',
+    courseId: 'automation',
+    title: 'Lead Routing Automation',
+    difficulty: 'basic',
+    duration: '60 Min.',
+    summary: 'Plane einen Make- oder Zapier-Flow, der neue Leads prüft, mapped und als CRM-Aufgabe anlegt.',
+    requirements: ['Definiere Trigger, Actions und Zielsystem.', 'Mappe Name, E-Mail und Lead-Quelle sauber.', 'Lege eine Fehlerbenachrichtigung für fehlende Pflichtfelder an.'],
+    hints: ['Starte mit einem kleinen JSON-Flow.', 'Trenne Datenmapping von der eigentlichen CRM-Action.'],
+    solutionNotes: ['Ein guter Flow ist nachvollziehbar, idempotent und lässt sich mit einem Beispiel-Lead testen.']
+  },
+  {
+    id: 'automation-ai-ticket-agent',
+    courseId: 'automation',
+    title: 'AI Ticket Agent',
+    difficulty: 'intermediate',
+    duration: '2 Std.',
+    summary: 'Entwirf einen Agentic Workflow, der Supporttickets zusammenfasst und Aufgaben mit menschlicher Freigabe vorbereitet.',
+    requirements: ['Formuliere System-Prompt und dynamischen Input.', 'Definiere einen Tool Call zum Erstellen einer Aufgabe.', 'Baue Human-in-the-loop vor dem Versand ein.'],
+    hints: ['Begrenze Tool-Parameter auf klare Felder.', 'Logge Ergebnis und Fehler, aber keine sensiblen Daten.'],
+    solutionNotes: ['Die beste Lösung lässt KI Entwürfe vorbereiten, aber riskante Aktionen erst nach Approval ausführen.']
   }
 ];

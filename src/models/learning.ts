@@ -1,4 +1,4 @@
-export type LanguageId = 'python' | 'csharp' | 'java' | 'html' | 'css' | 'javascript';
+export type LanguageId = 'python' | 'csharp' | 'java' | 'html' | 'css' | 'javascript' | 'automation';
 export type Difficulty = 'basic' | 'intermediate' | 'advanced';
 export type ThemeMode = 'dark' | 'light';
 
