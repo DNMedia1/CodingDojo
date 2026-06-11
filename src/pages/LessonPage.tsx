@@ -1,8 +1,9 @@
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Code2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { getLesson, courses } from '../data/courses';
+import { evaluateCode, type CodeFeedback } from '../services/codeFeedbackService';
 import { useProgress } from '../store/ProgressContext';
 import { isLessonCompleted } from '../utils/learning';
 
@@ -14,21 +15,35 @@ export function LessonPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
+  const [codeFeedback, setCodeFeedback] = useState<Record<string, CodeFeedback>>({});
   const completed = lesson && course ? isLessonCompleted(progress, course.id, lesson.id) : false;
 
   const quizComplete = useMemo(() => lesson?.quiz.every((question) => answers[question.id]) ?? false, [answers, lesson]);
   if (!lesson || !course) return <Header title="Lektion nicht gefunden" subtitle="Gehe zu einem Kurs und wähle eine andere Lektion." />;
+  const codeValue = lesson.codingChallenge ? (codeDrafts[lesson.id] ?? lesson.codingChallenge.starterCode) : '';
+  const feedback = codeFeedback[lesson.id];
+  const codingComplete = !lesson.codingChallenge || feedback?.status === 'correct' || completed;
+  const lessonSteps = ['Theorie', 'Code', 'Quiz', 'Code schreiben', 'Aufgabe'];
 
   const finish = () => {
     complete(course.id, lesson.id, lesson.xp);
     navigate(`/courses/${course.id}`);
   };
 
+  const checkCode = () => {
+    if (!lesson.codingChallenge) return;
+    setCodeFeedback((current) => ({
+      ...current,
+      [lesson.id]: evaluateCode(codeValue, lesson.codingChallenge!)
+    }));
+  };
+
   return (
     <div>
       <Header title={lesson.title} subtitle={`${course.title} · ${lesson.estimatedMinutes} min · ${lesson.xp} XP`} />
-      <div className="mb-4 grid grid-cols-4 gap-2">
-        {['Theorie', 'Code', 'Quiz', 'Aufgabe'].map((label, index) => (
+      <div className="mb-4 grid grid-cols-5 gap-2">
+        {lessonSteps.map((label, index) => (
           <button key={label} onClick={() => setStep(index)} className={`h-10 rounded-xl text-xs font-extrabold ${step === index ? 'bg-text text-ink' : 'bg-panel text-muted'}`}>
             {label}
           </button>
@@ -83,6 +98,58 @@ export function LessonPage() {
 
         {step === 3 ? (
           <div>
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-sky-300/10 text-sky-100">
+                <Code2 size={22} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black">Schreibe selbst Code</h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {lesson.codingChallenge?.prompt ?? 'Für diese Lektion ist noch keine Coding-Challenge hinterlegt.'}
+                </p>
+              </div>
+            </div>
+
+            {lesson.codingChallenge ? (
+              <>
+                <textarea
+                  value={codeValue}
+                  spellCheck={false}
+                  onChange={(event) => {
+                    setCodeDrafts((current) => ({ ...current, [lesson.id]: event.target.value }));
+                    setCodeFeedback((current) => {
+                      const next = { ...current };
+                      delete next[lesson.id];
+                      return next;
+                    });
+                  }}
+                  className="mt-4 min-h-[220px] w-full resize-y rounded-2xl border border-white/10 bg-ink p-4 font-mono text-sm leading-6 text-sky-100 outline-none focus:border-sky-300"
+                />
+                <button onClick={checkCode} className="mt-4 min-h-12 w-full rounded-2xl bg-text px-4 font-extrabold text-ink">
+                  Code prüfen
+                </button>
+                {feedback ? (
+                  <div className={`mt-4 rounded-2xl border p-4 ${feedback.status === 'correct' ? 'border-emerald-300/40 bg-emerald-300/10' : feedback.status === 'syntax-error' ? 'border-red-300/40 bg-red-300/10' : 'border-yellow-300/40 bg-yellow-300/10'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-extrabold">{feedback.title}</h3>
+                      <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black">{feedback.score}%</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-200">{feedback.message}</p>
+                    {feedback.hints.length > 0 ? (
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+                        {feedback.hints.map((hint) => <li key={hint}>• {hint}</li>)}
+                      </ul>
+                    ) : null}
+                    <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">{feedback.passedChecks}/{feedback.totalChecks} Checks bestanden</p>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
+        {step === 4 ? (
+          <div>
             <h2 className="text-xl font-black">Praxisaufgabe</h2>
             <p className="mt-3 text-base leading-7 text-slate-200">{lesson.practice.prompt}</p>
             <ul className="mt-4 space-y-2">
@@ -99,12 +166,12 @@ export function LessonPage() {
         <button disabled={step === 0} onClick={() => setStep((current) => Math.max(0, current - 1))} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-panel font-extrabold disabled:opacity-40">
           <ChevronLeft size={18} /> Zurück
         </button>
-        {step < 3 ? (
-          <button onClick={() => setStep((current) => Math.min(3, current + 1))} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-text font-extrabold text-ink">
+        {step < lessonSteps.length - 1 ? (
+          <button onClick={() => setStep((current) => Math.min(lessonSteps.length - 1, current + 1))} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-text font-extrabold text-ink">
             Weiter <ChevronRight size={18} />
           </button>
         ) : (
-          <button disabled={!quizComplete && !completed} onClick={finish} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-300 font-extrabold text-ink disabled:opacity-40">
+          <button disabled={(!quizComplete || !codingComplete) && !completed} onClick={finish} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-300 font-extrabold text-ink disabled:opacity-40">
             {completed ? 'Erledigt' : 'Abschliessen'}
           </button>
         )}
