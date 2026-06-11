@@ -1,16 +1,19 @@
-import { Flame, Play, Trophy } from 'lucide-react';
+import { CheckCircle2, Flame, Play, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { courses } from '../data/courses';
 import { CourseCard } from '../components/CourseCard';
 import { Header } from '../components/Header';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatTile } from '../components/StatTile';
+import { DAILY_BONUS_XP, getDailyQuests } from '../services/progressService';
 import { useProgress } from '../store/ProgressContext';
 import { getCourseProgress, getOverallProgress } from '../utils/learning';
 
 export function DashboardPage() {
   const { progress, levelInfo } = useProgress();
   const overall = getOverallProgress(progress);
+  const quests = getDailyQuests(progress);
+  const questsDone = quests.filter((quest) => quest.done).length;
   const activeCourse = courses.find((course) => getCourseProgress(course, progress).percent < 100) ?? courses[0];
   const activeModule = activeCourse.modules[0];
   const activeLesson = activeModule.lessons.find((lesson) => !(progress.completedLessons[activeCourse.id] ?? []).includes(lesson.id)) ?? activeModule.lessons[0];
@@ -45,14 +48,34 @@ export function DashboardPage() {
       </section>
 
       <section className="mt-5 rounded-3xl border border-white/10 bg-panelSoft p-5">
-        <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-400/15 text-orange-200">
-            <Flame size={22} />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-400/15 text-orange-200">
+              <Flame size={22} />
+            </div>
+            <div>
+              <h2 className="font-extrabold">Tagesziele</h2>
+              <p className="text-sm text-muted">
+                {progress.daily.bonusAwarded ? `Tagesbonus +${DAILY_BONUS_XP} XP erhalten!` : `Alle Ziele geschafft = +${DAILY_BONUS_XP} XP Bonus.`}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-extrabold">Tägliche Praxis</h2>
-            <p className="text-sm text-muted">Schließe {progress.dailyGoal} Lektionen ab oder wiederhole falsche Quizfragen.</p>
-          </div>
+          <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-black">{questsDone}/{quests.length}</span>
+        </div>
+        <div className="mt-4 space-y-3">
+          {quests.map((quest) => (
+            <div key={quest.id}>
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className={`flex items-center gap-2 font-bold ${quest.done ? 'text-emerald-200' : 'text-slate-200'}`}>
+                  <CheckCircle2 size={16} className={quest.done ? 'text-emerald-300' : 'text-muted'} /> {quest.title}
+                </span>
+                <span className="shrink-0 text-xs font-black text-muted">{Math.min(quest.current, quest.target)}/{quest.target}</span>
+              </div>
+              <div className="mt-1.5">
+                <ProgressBar value={(Math.min(quest.current, quest.target) / quest.target) * 100} accent={quest.done ? '#86efac' : '#50a7ff'} />
+              </div>
+            </div>
+          ))}
         </div>
         <Link to="/quiz" className="mt-4 flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-extrabold">
           <Trophy size={18} /> Quiz üben

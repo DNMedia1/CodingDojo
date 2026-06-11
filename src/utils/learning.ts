@@ -16,3 +16,9 @@ export function getOverallProgress(progress: UserProgress) {
 export function isLessonCompleted(progress: UserProgress, courseId: LanguageId, lessonId: string) {
   return progress.completedLessons[courseId]?.includes(lessonId) ?? false;
 }
+
+export function isFillBlankAnswerCorrect(input: string, answer: string) {
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/^["'<@(]+/, '').replace(/[>"':;=()[\]]+$/, '');
+  const normalizedInput = normalize(input);
+  return normalizedInput.length > 0 && normalizedInput === normalize(answer);
+}

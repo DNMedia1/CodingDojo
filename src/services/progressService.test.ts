@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateLevel, completeLesson, gradeQuiz } from './progressService';
+import { DAILY_BONUS_XP, calculateLevel, completeLesson, getDailyQuests, gradeQuiz } from './progressService';
 import type { UserProgress } from '../models/learning';
 
 const baseProgress: UserProgress = {
@@ -7,10 +7,13 @@ const baseProgress: UserProgress = {
   avatarTone: 'blue',
   xp: 90,
   streak: 1,
+  bestStreak: 1,
+  quizCorrectTotal: 0,
   lastActiveDate: '2026-06-10',
   completedLessons: {},
   quizMistakes: [],
   dailyGoal: 2,
+  daily: { date: '2026-06-10', lessonsCompleted: 1, quizCorrect: 2, xpEarned: 47, bonusAwarded: false },
   theme: 'dark'
 };
 
@@ -31,18 +34,53 @@ describe('progressService', () => {
     expect(second.completedLessons.python).toHaveLength(1);
   });
 
-  it('grades quiz attempts and tracks missed question ids', () => {
+  it('continues the streak and resets daily counters on a new day', () => {
+    const next = completeLesson(baseProgress, 'python', 'python-kontrollfluss', 40, '2026-06-11');
+
+    expect(next.streak).toBe(2);
+    expect(next.bestStreak).toBe(2);
+    expect(next.daily).toEqual({ date: '2026-06-11', lessonsCompleted: 1, quizCorrect: 0, xpEarned: 40, bonusAwarded: false });
+  });
+
+  it('grades quiz attempts, tracks mistakes and keeps the streak alive', () => {
     const result = gradeQuiz(
       [
         { questionId: 'q1', correctOptionId: 'a', selectedOptionId: 'a' },
         { questionId: 'q2', correctOptionId: 'b', selectedOptionId: 'a' }
       ],
-      baseProgress
+      baseProgress,
+      '2026-06-11'
     );
 
     expect(result.score).toBe(1);
     expect(result.total).toBe(2);
     expect(result.nextProgress.quizMistakes).toContain('q2');
     expect(result.nextProgress.quizMistakes).not.toContain('q1');
+    expect(result.nextProgress.quizCorrectTotal).toBe(1);
+    expect(result.nextProgress.streak).toBe(2);
+    expect(result.nextProgress.daily.quizCorrect).toBe(1);
+  });
+
+  it('awards the daily bonus exactly once when all quests are done', () => {
+    const nearlyDone: UserProgress = {
+      ...baseProgress,
+      dailyGoal: 1,
+      lastActiveDate: '2026-06-11',
+      daily: { date: '2026-06-11', lessonsCompleted: 0, quizCorrect: 5, xpEarned: 50, bonusAwarded: false }
+    };
+
+    const withBonus = completeLesson(nearlyDone, 'css', 'css-flexbox', 35, '2026-06-11');
+    expect(withBonus.daily.bonusAwarded).toBe(true);
+    expect(withBonus.xp).toBe(nearlyDone.xp + 35 + DAILY_BONUS_XP);
+
+    const afterSecondLesson = completeLesson(withBonus, 'css', 'css-css-grid', 40, '2026-06-11');
+    expect(afterSecondLesson.xp).toBe(withBonus.xp + 40);
+  });
+
+  it('reports daily quests against a fresh day when stored activity is stale', () => {
+    const quests = getDailyQuests(baseProgress, '2026-06-12');
+
+    expect(quests).toHaveLength(3);
+    expect(quests.every((quest) => quest.current === 0 && !quest.done)).toBe(true);
   });
 });

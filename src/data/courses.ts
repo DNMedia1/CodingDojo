@@ -1,4 +1,4 @@
-import type { CodingConceptCheck, Course, CourseModule, Difficulty, LanguageId, Lesson } from '../models/learning';
+import type { CodingConceptCheck, Course, CourseModule, Difficulty, FillBlankTask, LanguageId, Lesson, QuizOption } from '../models/learning';
 
 type LessonSeed = {
   title: string;
@@ -328,6 +328,152 @@ function buildConceptChecks(code: string, bestPractice: string): CodingConceptCh
   }));
 }
 
+const BLANK_PLACEHOLDER = '____';
+
+const blankTokensByLanguage: Record<string, string[]> = {
+  python: ['yield', 'lambda', 'await', 'async', 'raise', 'except', 'enumerate', 'sorted', 'class', 'def', 'import', 'with', 'return', 'print', 'for', 'if'],
+  csharp: ['interface', 'static', 'using', 'await', 'async', 'var', 'new', 'Console.WriteLine', 'class', 'return', 'public'],
+  java: ['System.out.println', 'interface', 'stream', 'static', 'final', 'private', 'record', 'new', 'class', 'return', 'void'],
+  javascript: ['addEventListener', 'defineProps', 'await', 'async', 'fetch', 'export', 'function', 'type', 'return', 'const', 'let'],
+  css: ['grid', 'flex', 'transition', 'animation', 'min-height', 'media', 'padding', 'gap', 'transform']
+};
+
+const htmlBlankTags = ['nav', 'label', 'table', 'meta', 'article', 'main', 'button', 'input', 'section', 'img', 'thead', 'h1', 'h2'];
+
+const jsonBlankKeys = ['requiresApproval', 'onError', 'redact', 'parameters', 'trigger', 'steps', 'goal', 'method', 'action', 'role', 'email', 'url', 'name'];
+
+const quizFallbackDistractors = [
+  'Struktur ist erst wichtig, wenn ein Projekt sehr gross ist.',
+  'Hauptsache der Code läuft einmal lokal durch.',
+  'Solche Details übernimmt später das Code-Review-Team.',
+  'Das ist nur Theorie und im Alltag kaum relevant.',
+  'Moderne Editoren korrigieren das automatisch.',
+  'Das betrifft nur sehr erfahrene Entwickler.'
+];
+
+type PracticeQuestionVariant = {
+  prompt: string;
+  correct: string;
+  distractors: [string, string];
+  explanation: string;
+};
+
+const practiceQuestionVariants: PracticeQuestionVariant[] = [
+  {
+    prompt: 'Warum lohnt sich dieses Konzept im Team-Alltag?',
+    correct: 'Weil Code wiederholt gelesen, getestet, reviewed und geändert wird.',
+    distractors: ['Weil es nur für Interviewaufgaben relevant ist.', 'Weil Code nach dem Merge nie wieder angefasst wird.'],
+    explanation: 'Professioneller Code wird selten nur einmal geschrieben. Lesbarkeit und klare Grenzen zahlen sich bei jeder Änderung aus.'
+  },
+  {
+    prompt: 'Du übernimmst fremden Code mit unklarer Struktur. Was hilft zuerst?',
+    correct: 'Kleine, klar benannte Einheiten mit eindeutiger Verantwortung herstellen.',
+    distractors: ['Alles sofort neu schreiben, ohne das Verhalten abzusichern.', 'Mehr Abkürzungen verwenden, damit der Code kürzer wird.'],
+    explanation: 'Verständlichkeit entsteht durch kleine Einheiten mit klarer Aufgabe, nicht durch radikale Neuanfänge oder kompakteren Code.'
+  },
+  {
+    prompt: 'Was macht eine Lösung review-freundlich?',
+    correct: 'Die Absicht ist erkennbar, ohne den Code im Kopf ausführen zu müssen.',
+    distractors: ['Sie nutzt möglichst viele clevere Einzeiler.', 'Sie versteckt Details in globalen Variablen.'],
+    explanation: 'Reviewer beurteilen Absicht und Risiken. Je sichtbarer beides ist, desto schneller und sicherer ist das Review.'
+  },
+  {
+    prompt: 'Wie prüfst du am verlässlichsten, dass dein Code funktioniert?',
+    correct: 'Mit einem kleinen, wiederholbaren Beispiel oder Test.',
+    distractors: ['Indem der Code einmal ohne Fehlermeldung startet.', 'Indem sich eine Woche lang niemand beschwert.'],
+    explanation: 'Ein wiederholbares Beispiel beweist Verhalten und schützt vor Regressionen. Ein fehlerfreier Start beweist nur, dass nichts crasht.'
+  },
+  {
+    prompt: 'Was ist beim Benennen von Variablen und Funktionen am wichtigsten?',
+    correct: 'Namen beschreiben Absicht und Inhalt aus Sicht des Lesers.',
+    distractors: ['Namen so kurz wie möglich halten, um Tippzeit zu sparen.', 'Namen durchnummerieren, damit sie eindeutig bleiben.'],
+    explanation: 'Code wird häufiger gelesen als geschrieben. Sprechende Namen ersparen jedem Leser das Rekonstruieren der Absicht.'
+  },
+  {
+    prompt: 'Wie gehst du mit Fehlerfällen in echten Apps um?',
+    correct: 'Fehler an klaren Grenzen behandeln und verständlich melden.',
+    distractors: ['Fehler global verschlucken, damit nichts abbricht.', 'Fehlerbehandlung auf die Zeit nach dem Launch verschieben.'],
+    explanation: 'Stilles Verschlucken versteckt Bugs. Behandelte und gemeldete Fehler machen Probleme früh sichtbar und reparierbar.'
+  },
+  {
+    prompt: 'Was unterscheidet Übungscode von produktionsreifem Code?',
+    correct: 'Produktionscode plant Lesbarkeit, Fehlerfälle und Änderungen von Anfang an ein.',
+    distractors: ['Produktionscode ist automatisch länger und komplizierter.', 'Übungscode braucht keine korrekte Syntax.'],
+    explanation: 'Produktionsreife bedeutet nicht mehr Komplexität, sondern bewusste Entscheidungen für Wartbarkeit und Fehlerfälle.'
+  },
+  {
+    prompt: 'Warum sind kleine Schritte beim Entwickeln sinnvoll?',
+    correct: 'Kleine Schritte machen Fehler schneller sichtbar und leichter rückgängig.',
+    distractors: ['Kleine Schritte garantieren, dass keine Bugs entstehen.', 'Grosse Würfe sparen am Ende immer Zeit.'],
+    explanation: 'Kleine, überprüfbare Schritte verkürzen die Zeit zwischen Fehler und Entdeckung — das ist der Kern professioneller Arbeit.'
+  }
+];
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
+function rotate<T>(items: T[], offset: number): T[] {
+  const shift = positiveModulo(offset, items.length);
+  return [...items.slice(shift), ...items.slice(0, shift)];
+}
+
+function positiveModulo(value: number, divisor: number) {
+  return ((value % divisor) + divisor) % divisor;
+}
+
+function buildQuizOptions(entries: { correct: boolean; text: string }[], offset: number): { options: QuizOption[]; correctOptionId: string } {
+  const ids = ['a', 'b', 'c'];
+  const rotated = rotate(entries, offset);
+  return {
+    options: rotated.map((entry, index) => ({ id: ids[index], text: entry.text })),
+    correctOptionId: ids[rotated.findIndex((entry) => entry.correct)]
+  };
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function blankCode(codeLanguage: string, code: string): { code: string; answer: string } {
+  if (codeLanguage === 'html') {
+    for (const tag of htmlBlankTags) {
+      const pattern = new RegExp(`<${tag}(?=[\\s>/])`);
+      if (pattern.test(code)) return { code: code.replace(pattern, `<${BLANK_PLACEHOLDER}`), answer: tag };
+    }
+  }
+
+  if (codeLanguage === 'json') {
+    for (const key of jsonBlankKeys) {
+      const search = `"${key}"`;
+      if (code.includes(search)) return { code: code.replace(search, `"${BLANK_PLACEHOLDER}"`), answer: key };
+    }
+  }
+
+  for (const token of blankTokensByLanguage[codeLanguage] ?? []) {
+    const pattern = new RegExp(`\\b${escapeRegExp(token)}\\b`);
+    if (pattern.test(code)) return { code: code.replace(pattern, BLANK_PLACEHOLDER), answer: token };
+  }
+
+  const longestWord = [...code.matchAll(/[A-Za-z_][A-Za-z0-9_]{3,}/g)].map((match) => match[0]).sort((a, b) => b.length - a.length)[0];
+  const answer = longestWord ?? code.trim().split(/\s+/)[0];
+  return { code: code.replace(answer, BLANK_PLACEHOLDER), answer };
+}
+
+function buildFillBlank(codeLanguage: string, code: string, lessonTitle: string): FillBlankTask {
+  const blanked = blankCode(codeLanguage, code);
+  return {
+    instruction: `Vervollständige das Codebeispiel aus "${lessonTitle}": Welcher Baustein gehört in die Lücke?`,
+    code: blanked.code,
+    answer: blanked.answer,
+    hint: `Der gesuchte Baustein beginnt mit "${blanked.answer.slice(0, 1)}". Wirf notfalls noch einen Blick auf den Code-Schritt.`
+  };
+}
+
 export const courses: Course[] = courseSeeds.map((courseSeed) => ({
   ...courseSeed,
   modules: courseSeed.modules.map((moduleSeed, moduleIndex): CourseModule => ({
@@ -338,6 +484,24 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
       const slug = lessonSeed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const id = `${courseSeed.id}-${slug || `lesson-${lessonIndex + 1}`}`;
       const difficulty = lessonSeed.difficulty ?? 'basic';
+      const seedHash = hashString(id);
+      const conceptQuestion = buildQuizOptions(
+        [
+          { correct: true, text: lessonSeed.bestPractice },
+          { correct: false, text: lessonSeed.trap },
+          { correct: false, text: quizFallbackDistractors[positiveModulo(seedHash, quizFallbackDistractors.length)] }
+        ],
+        positiveModulo(seedHash, 3)
+      );
+      const practiceVariant = practiceQuestionVariants[positiveModulo(seedHash >>> 3, practiceQuestionVariants.length)];
+      const practiceQuestion = buildQuizOptions(
+        [
+          { correct: true, text: practiceVariant.correct },
+          { correct: false, text: practiceVariant.distractors[0] },
+          { correct: false, text: practiceVariant.distractors[1] }
+        ],
+        positiveModulo(seedHash >>> 5, 3)
+      );
       return {
         id,
         title: lessonSeed.title,
@@ -345,29 +509,22 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
         xp: 35 + lessonIndex * 5,
         theory: lessonSeed.theory,
         codeExample: { language: courseSeed.codeLanguage, code: lessonSeed.code },
+        fillBlank: buildFillBlank(courseSeed.codeLanguage, lessonSeed.code, lessonSeed.title),
         quiz: [
           {
             id: `${id}-q1`,
             prompt: `Welche Aussage passt am besten zu "${lessonSeed.title}"?`,
-            options: [
-              { id: 'a', text: lessonSeed.bestPractice },
-              { id: 'b', text: lessonSeed.trap },
-              { id: 'c', text: 'Struktur ist erst wichtig, wenn ein Projekt sehr gross ist.' }
-            ],
-            correctOptionId: 'a',
+            options: conceptQuestion.options,
+            correctOptionId: conceptQuestion.correctOptionId,
             explanation: lessonSeed.bestPractice,
             difficulty
           },
           {
             id: `${id}-q2`,
-            prompt: 'Warum ist das in echter Entwicklerpraxis wichtig?',
-            options: [
-              { id: 'a', text: 'Weil Code wiederholt gelesen, getestet, reviewed und geändert wird.' },
-              { id: 'b', text: 'Weil es nur für Interviewaufgaben relevant ist.' },
-              { id: 'c', text: 'Weil man den Code danach nicht mehr verstehen muss.' }
-            ],
-            correctOptionId: 'a',
-            explanation: 'Professioneller Code wird selten nur einmal geschrieben. Lesbarkeit und klare Grenzen zahlen sich bei jeder Änderung aus.',
+            prompt: practiceVariant.prompt,
+            options: practiceQuestion.options,
+            correctOptionId: practiceQuestion.correctOptionId,
+            explanation: practiceVariant.explanation,
             difficulty: lessonIndex === 2 ? 'intermediate' : difficulty
           }
         ],

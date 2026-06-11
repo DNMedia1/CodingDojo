@@ -42,6 +42,13 @@ export interface CodingChallenge {
   requiredConcepts: CodingConceptCheck[];
 }
 
+export interface FillBlankTask {
+  instruction: string;
+  code: string;
+  answer: string;
+  hint: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -49,6 +56,7 @@ export interface Lesson {
   xp: number;
   theory: string;
   codeExample: CodeExample;
+  fillBlank: FillBlankTask;
   quiz: QuizQuestion[];
   practice: PracticeTask;
   codingChallenge?: CodingChallenge;
@@ -84,16 +92,47 @@ export interface PracticeProject {
   solutionNotes: string[];
 }
 
+export interface DailyActivity {
+  date: string;
+  lessonsCompleted: number;
+  quizCorrect: number;
+  xpEarned: number;
+  bonusAwarded: boolean;
+}
+
 export interface UserProgress {
   displayName: string;
   avatarTone: string;
   xp: number;
   streak: number;
+  bestStreak: number;
+  quizCorrectTotal: number;
   lastActiveDate: string;
   completedLessons: Partial<Record<LanguageId, string[]>>;
   quizMistakes: string[];
   dailyGoal: number;
+  daily: DailyActivity;
   theme: ThemeMode;
+}
+
+export interface BadgeDefinition {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export interface BadgeState {
+  badge: BadgeDefinition;
+  earned: boolean;
+}
+
+export interface DailyQuest {
+  id: string;
+  title: string;
+  target: number;
+  current: number;
+  done: boolean;
 }
 
 export interface LevelInfo {

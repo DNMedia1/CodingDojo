@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatTile } from '../components/StatTile';
 import { courses } from '../data/courses';
+import { getBadgeStates } from '../services/badgeService';
 import { useProgress } from '../store/ProgressContext';
 import { getCourseProgress, getOverallProgress } from '../utils/learning';
 
@@ -11,6 +12,8 @@ export function ProfilePage() {
   const { progress, levelInfo } = useProgress();
   const overall = getOverallProgress(progress);
   const completedCourses = courses.filter((course) => getCourseProgress(course, progress).percent === 100).length;
+  const badgeStates = getBadgeStates(progress);
+  const earnedCount = badgeStates.filter((state) => state.earned).length;
 
   return (
     <div>
@@ -30,6 +33,25 @@ export function ProfilePage() {
         <StatTile label="Streak" value={progress.streak} tone="yellow" />
         <StatTile label="Kurse" value={completedCourses} tone="green" />
         <StatTile label="Total" value={`${overall.percent}%`} tone="purple" />
+      </section>
+      <section className="mt-5 rounded-3xl border border-white/10 bg-panel p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black">Badges</h2>
+          <span className="text-sm font-bold text-muted">{earnedCount}/{badgeStates.length}</span>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {badgeStates.map(({ badge, earned }) => (
+            <div
+              key={badge.id}
+              title={badge.description}
+              className={`flex flex-col items-center gap-1 rounded-2xl border p-3 text-center ${earned ? 'border-yellow-300/40 bg-yellow-300/10' : 'border-white/10 bg-white/5 opacity-45'}`}
+            >
+              <span className="text-2xl" aria-hidden>{badge.icon}</span>
+              <span className="text-[11px] font-extrabold leading-4">{badge.title}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs leading-5 text-muted">Bester Streak bisher: {progress.bestStreak} Tage · {progress.quizCorrectTotal} richtige Quizantworten</p>
       </section>
       <div className="mt-5 grid gap-3">
         <Link to="/progress" className="profile-link"><GraduationCap size={20} /> Fortschritt ansehen</Link>

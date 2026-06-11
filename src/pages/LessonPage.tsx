@@ -1,11 +1,37 @@
-import { Check, ChevronLeft, ChevronRight, Code2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Code2, Flame, PartyPopper } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
+import { ProgressBar } from '../components/ProgressBar';
 import { getLesson, courses } from '../data/courses';
+import type { BadgeDefinition, DailyQuest } from '../models/learning';
+import { getNewlyEarnedBadges } from '../services/badgeService';
 import { evaluateCode, type CodeFeedback } from '../services/codeFeedbackService';
+import { calculateLevel, completeLesson as computeLessonCompletion, getDailyQuests } from '../services/progressService';
 import { useProgress } from '../store/ProgressContext';
-import { isLessonCompleted } from '../utils/learning';
+import { isFillBlankAnswerCorrect, isLessonCompleted } from '../utils/learning';
+
+type FinishResult = {
+  xpGained: number;
+  levelBefore: number;
+  level: number;
+  levelProgress: number;
+  streak: number;
+  bonusAwarded: boolean;
+  newBadges: BadgeDefinition[];
+  quests: DailyQuest[];
+};
+
+const lessonSteps = ['Theorie', 'Code', 'Lücke', 'Quiz', 'Coden', 'Aufgabe'];
+const confettiPieces = [
+  { left: '8%', delay: '0ms', color: '#ffd94d' },
+  { left: '22%', delay: '120ms', color: '#50a7ff' },
+  { left: '36%', delay: '40ms', color: '#86efac' },
+  { left: '50%', delay: '180ms', color: '#b47cff' },
+  { left: '64%', delay: '80ms', color: '#ff8a3d' },
+  { left: '78%', delay: '220ms', color: '#7dd3fc' },
+  { left: '90%', delay: '140ms', color: '#ffe45c' }
+];
 
 export function LessonPage() {
   const { lessonId } = useParams();
@@ -17,6 +43,10 @@ export function LessonPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [codeFeedback, setCodeFeedback] = useState<Record<string, CodeFeedback>>({});
+  const [blankInputs, setBlankInputs] = useState<Record<string, string>>({});
+  const [blankResults, setBlankResults] = useState<Record<string, 'correct' | 'wrong'>>({});
+  const [blankAttempts, setBlankAttempts] = useState<Record<string, number>>({});
+  const [finishResult, setFinishResult] = useState<FinishResult | null>(null);
   const completed = lesson && course ? isLessonCompleted(progress, course.id, lesson.id) : false;
 
   const quizComplete = useMemo(() => lesson?.quiz.every((question) => answers[question.id]) ?? false, [answers, lesson]);
@@ -24,11 +54,30 @@ export function LessonPage() {
   const codeValue = lesson.codingChallenge ? (codeDrafts[lesson.id] ?? lesson.codingChallenge.starterCode) : '';
   const feedback = codeFeedback[lesson.id];
   const codingComplete = !lesson.codingChallenge || feedback?.status === 'correct' || completed;
-  const lessonSteps = ['Theorie', 'Code', 'Quiz', 'Code schreiben', 'Aufgabe'];
+  const blankValue = blankInputs[lesson.id] ?? '';
+  const blankState = blankResults[lesson.id];
+  const blankComplete = blankState === 'correct' || completed;
+  const courseLessons = course.modules.flatMap((module) => module.lessons);
+  const nextLesson = courseLessons[courseLessons.findIndex((item) => item.id === lesson.id) + 1];
 
   const finish = () => {
+    if (completed) {
+      navigate(`/courses/${course.id}`);
+      return;
+    }
+    const after = computeLessonCompletion(progress, course.id, lesson.id, lesson.xp);
+    const levelAfter = calculateLevel(after.xp);
+    setFinishResult({
+      xpGained: after.xp - progress.xp,
+      levelBefore: calculateLevel(progress.xp).level,
+      level: levelAfter.level,
+      levelProgress: levelAfter.progress,
+      streak: after.streak,
+      bonusAwarded: after.daily.bonusAwarded && !progress.daily.bonusAwarded,
+      newBadges: getNewlyEarnedBadges(progress, after),
+      quests: getDailyQuests(after)
+    });
     complete(course.id, lesson.id, lesson.xp);
-    navigate(`/courses/${course.id}`);
   };
 
   const checkCode = () => {
@@ -39,12 +88,33 @@ export function LessonPage() {
     }));
   };
 
+  const checkBlank = () => {
+    const correct = isFillBlankAnswerCorrect(blankValue, lesson.fillBlank.answer);
+    setBlankResults((current) => ({ ...current, [lesson.id]: correct ? 'correct' : 'wrong' }));
+    if (!correct) setBlankAttempts((current) => ({ ...current, [lesson.id]: (current[lesson.id] ?? 0) + 1 }));
+  };
+
+  const revealBlank = () => {
+    setBlankInputs((current) => ({ ...current, [lesson.id]: lesson.fillBlank.answer }));
+    setBlankResults((current) => ({ ...current, [lesson.id]: 'correct' }));
+  };
+
+  const goToNextLesson = () => {
+    setFinishResult(null);
+    setStep(0);
+    if (nextLesson) {
+      navigate(`/lessons/${nextLesson.id}`);
+    } else {
+      navigate(`/courses/${course.id}`);
+    }
+  };
+
   return (
     <div>
       <Header title={lesson.title} subtitle={`${course.title} · ${lesson.estimatedMinutes} min · ${lesson.xp} XP`} />
-      <div className="mb-4 grid grid-cols-5 gap-2">
+      <div className="mb-4 grid grid-cols-6 gap-1.5">
         {lessonSteps.map((label, index) => (
-          <button key={label} onClick={() => setStep(index)} className={`h-10 rounded-xl text-xs font-extrabold ${step === index ? 'bg-text text-ink' : 'bg-panel text-muted'}`}>
+          <button key={label} onClick={() => setStep(index)} className={`h-10 rounded-xl px-1 text-[11px] font-extrabold ${step === index ? 'bg-text text-ink' : 'bg-panel text-muted'}`}>
             {label}
           </button>
         ))}
@@ -66,6 +136,50 @@ export function LessonPage() {
         ) : null}
 
         {step === 2 ? (
+          <div>
+            <h2 className="text-xl font-black">Fülle die Lücke</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">{lesson.fillBlank.instruction}</p>
+            <pre className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-ink p-4 text-sm leading-6 text-sky-100"><code>{lesson.fillBlank.code}</code></pre>
+            <input
+              value={blankValue}
+              spellCheck={false}
+              autoCapitalize="none"
+              autoCorrect="off"
+              placeholder="____"
+              onChange={(event) => {
+                setBlankInputs((current) => ({ ...current, [lesson.id]: event.target.value }));
+                setBlankResults((current) => {
+                  const next = { ...current };
+                  delete next[lesson.id];
+                  return next;
+                });
+              }}
+              className={`mt-4 min-h-12 w-full rounded-2xl border bg-ink px-4 font-mono text-sm outline-none ${
+                blankState === 'correct' ? 'border-emerald-300/60' : blankState === 'wrong' ? 'border-red-300/60' : 'border-white/10 focus:border-sky-300'
+              }`}
+            />
+            <button onClick={checkBlank} className="mt-3 min-h-12 w-full rounded-2xl bg-text font-extrabold text-ink">
+              Antwort prüfen
+            </button>
+            {blankState === 'correct' ? (
+              <p className="mt-3 rounded-2xl border border-emerald-300/40 bg-emerald-300/10 p-4 text-sm font-bold leading-6 text-emerald-100">
+                Richtig! Genau dieser Baustein macht das Beispiel vollständig.
+              </p>
+            ) : null}
+            {blankState === 'wrong' ? (
+              <div className="mt-3 rounded-2xl border border-yellow-300/40 bg-yellow-300/10 p-4">
+                <p className="text-sm leading-6 text-yellow-100">Noch nicht ganz. {lesson.fillBlank.hint}</p>
+                {(blankAttempts[lesson.id] ?? 0) >= 2 ? (
+                  <button onClick={revealBlank} className="mt-3 min-h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-bold">
+                    Lösung anzeigen
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {step === 3 ? (
           <div className="space-y-5">
             {lesson.quiz.map((question) => {
               const selected = answers[question.id];
@@ -96,7 +210,7 @@ export function LessonPage() {
           </div>
         ) : null}
 
-        {step === 3 ? (
+        {step === 4 ? (
           <div>
             <div className="flex items-start gap-3">
               <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-sky-300/10 text-sky-100">
@@ -148,7 +262,7 @@ export function LessonPage() {
           </div>
         ) : null}
 
-        {step === 4 ? (
+        {step === 5 ? (
           <div>
             <h2 className="text-xl font-black">Praxisaufgabe</h2>
             <p className="mt-3 text-base leading-7 text-slate-200">{lesson.practice.prompt}</p>
@@ -171,12 +285,71 @@ export function LessonPage() {
             Weiter <ChevronRight size={18} />
           </button>
         ) : (
-          <button disabled={(!quizComplete || !codingComplete) && !completed} onClick={finish} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-300 font-extrabold text-ink disabled:opacity-40">
+          <button disabled={(!quizComplete || !codingComplete || !blankComplete) && !completed} onClick={finish} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-300 font-extrabold text-ink disabled:opacity-40">
             {completed ? 'Erledigt' : 'Abschliessen'}
           </button>
         )}
       </div>
       <Link to={`/courses/${course.id}`} className="mt-4 block text-center text-sm font-bold text-muted">Zurück zu {course.title}</Link>
+
+      {finishResult ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/85 backdrop-blur-sm">
+          <div className="success-card relative w-full max-w-[480px] overflow-hidden rounded-t-[28px] border border-white/10 bg-panel p-6 pb-10">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-32" aria-hidden>
+              {confettiPieces.map((piece) => (
+                <span
+                  key={piece.left}
+                  className="confetti-piece absolute top-2 h-2.5 w-2.5 rounded-sm"
+                  style={{ left: piece.left, background: piece.color, animationDelay: piece.delay }}
+                />
+              ))}
+            </div>
+            <div className="success-pop mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-emerald-300/15 text-emerald-200">
+              <PartyPopper size={30} />
+            </div>
+            <h2 className="mt-4 text-center text-2xl font-black">Lektion abgeschlossen!</h2>
+            <p className="mt-2 text-center text-lg font-black text-emerald-200">
+              +{finishResult.xpGained} XP{finishResult.bonusAwarded ? ' inkl. Tagesbonus' : ''}
+            </p>
+            {finishResult.level > finishResult.levelBefore ? (
+              <p className="mt-1 text-center text-sm font-extrabold text-yellow-200">Level Up! Du bist jetzt Level {finishResult.level}.</p>
+            ) : null}
+            <div className="mt-5">
+              <div className="flex items-center justify-between text-xs font-bold text-muted">
+                <span>Level {finishResult.level}</span>
+                <span className="inline-flex items-center gap-1"><Flame size={14} className="text-orange-300" /> {finishResult.streak} Tage Streak</span>
+              </div>
+              <div className="mt-2"><ProgressBar value={finishResult.levelProgress} accent="#86efac" /></div>
+            </div>
+            {finishResult.newBadges.length > 0 ? (
+              <div className="mt-5 rounded-2xl border border-yellow-300/30 bg-yellow-300/10 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-yellow-100">Neues Badge</p>
+                <div className="mt-2 space-y-1">
+                  {finishResult.newBadges.map((badge) => (
+                    <p key={badge.id} className="text-sm font-extrabold">{badge.icon} {badge.title} <span className="font-bold text-muted">— {badge.description}</span></p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="mt-5 space-y-2">
+              {finishResult.quests.map((quest) => (
+                <div key={quest.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className={`font-bold ${quest.done ? 'text-emerald-200' : 'text-muted'}`}>{quest.done ? '✓' : '·'} {quest.title}</span>
+                  <span className="shrink-0 text-xs font-black text-muted">{Math.min(quest.current, quest.target)}/{quest.target}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 grid gap-3">
+              <button onClick={goToNextLesson} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-text font-extrabold text-ink">
+                {nextLesson ? 'Nächste Lektion' : 'Zurück zum Kurs'} <ChevronRight size={18} />
+              </button>
+              <button onClick={() => { setFinishResult(null); navigate(`/courses/${course.id}`); }} className="min-h-12 rounded-2xl border border-white/10 bg-white/5 font-extrabold">
+                Zur Kursübersicht
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
