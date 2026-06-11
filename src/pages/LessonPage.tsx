@@ -1,10 +1,11 @@
-import { Check, ChevronLeft, ChevronRight, Code2, Flame, PartyPopper } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Code2, Flame, Lightbulb, PartyPopper } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { ProgressBar } from '../components/ProgressBar';
 import { getLesson, courses } from '../data/courses';
 import type { BadgeDefinition, DailyQuest } from '../models/learning';
+import { loadOpenRouterApiKey, requestCodeHint, saveOpenRouterApiKey } from '../services/aiHintService';
 import { getNewlyEarnedBadges } from '../services/badgeService';
 import { evaluateCode, type CodeFeedback } from '../services/codeFeedbackService';
 import { calculateLevel, completeLesson as computeLessonCompletion, getDailyQuests } from '../services/progressService';
@@ -46,6 +47,10 @@ export function LessonPage() {
   const [blankInputs, setBlankInputs] = useState<Record<string, string>>({});
   const [blankResults, setBlankResults] = useState<Record<string, 'correct' | 'wrong'>>({});
   const [blankAttempts, setBlankAttempts] = useState<Record<string, number>>({});
+  const [openRouterKey, setOpenRouterKey] = useState(() => loadOpenRouterApiKey());
+  const [aiHint, setAiHint] = useState('');
+  const [aiHintError, setAiHintError] = useState('');
+  const [aiHintLoading, setAiHintLoading] = useState(false);
   const [finishResult, setFinishResult] = useState<FinishResult | null>(null);
   const completed = lesson && course ? isLessonCompleted(progress, course.id, lesson.id) : false;
 
@@ -87,6 +92,35 @@ export function LessonPage() {
       ...current,
       [lesson.id]: evaluateCode(codeValue, lesson.codingChallenge!)
     }));
+  };
+
+  const saveAiKey = () => {
+    saveOpenRouterApiKey(openRouterKey);
+    setOpenRouterKey(loadOpenRouterApiKey());
+    setAiHintError('');
+  };
+
+  const askAiForHint = async () => {
+    if (!lesson.codingChallenge) return;
+    setAiHintLoading(true);
+    setAiHintError('');
+    setAiHint('');
+    try {
+      const hint = await requestCodeHint({
+        apiKey: openRouterKey,
+        courseTitle: course.title,
+        lessonTitle: lesson.title,
+        language: lesson.codingChallenge.language,
+        challengePrompt: lesson.codingChallenge.prompt,
+        code: codeValue,
+        localFeedback: feedback ? `${feedback.title}: ${feedback.message} ${feedback.hints.join(' ')}` : ''
+      });
+      setAiHint(hint);
+    } catch (error) {
+      setAiHintError(error instanceof Error ? error.message : 'KI-Hilfe konnte nicht geladen werden.');
+    } finally {
+      setAiHintLoading(false);
+    }
   };
 
   const checkBlank = () => {
@@ -303,6 +337,36 @@ export function LessonPage() {
                     <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">{feedback.passedChecks}/{feedback.totalChecks} Checks bestanden</p>
                   </div>
                 ) : null}
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-yellow-300/10 text-yellow-100">
+                      <Lightbulb size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold">KI-Hilfe</h3>
+                      <p className="mt-1 text-sm leading-6 text-muted">OpenRouter gibt nur Hinweise zur nächsten Idee, keine komplette Lösung.</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <input
+                      value={openRouterKey}
+                      type="password"
+                      autoComplete="off"
+                      placeholder="OpenRouter API-Key lokal speichern"
+                      onChange={(event) => setOpenRouterKey(event.target.value)}
+                      className="min-h-11 rounded-2xl border border-white/10 bg-ink px-4 text-sm outline-none focus:border-yellow-200"
+                    />
+                    <button onClick={saveAiKey} className="min-h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-extrabold">
+                      Key speichern
+                    </button>
+                  </div>
+                  <button onClick={askAiForHint} disabled={aiHintLoading} className="mt-3 min-h-12 w-full rounded-2xl bg-yellow-200 px-4 font-extrabold text-ink disabled:opacity-50">
+                    {aiHintLoading ? 'KI denkt nach...' : 'Hinweis anfordern'}
+                  </button>
+                  {aiHint ? <p className="mt-3 whitespace-pre-line rounded-2xl border border-yellow-300/30 bg-yellow-300/10 p-4 text-sm leading-6 text-yellow-50">{aiHint}</p> : null}
+                  {aiHintError ? <p className="mt-3 rounded-2xl border border-red-300/40 bg-red-300/10 p-4 text-sm leading-6 text-red-100">{aiHintError}</p> : null}
+                  <p className="mt-3 text-xs leading-5 text-muted">Der Key wird nur in diesem Browser gespeichert. Für eine öffentliche Deployment-Version sollte später ein Backend-Proxy verwendet werden.</p>
+                </div>
               </>
             ) : null}
           </div>
