@@ -467,12 +467,12 @@ const htmlBlankTags = ['nav', 'label', 'table', 'meta', 'article', 'main', 'butt
 const jsonBlankKeys = ['requiresApproval', 'onError', 'redact', 'parameters', 'trigger', 'steps', 'goal', 'method', 'action', 'role', 'email', 'url', 'name'];
 
 const quizFallbackDistractors = [
-  'Struktur ist erst wichtig, wenn ein Projekt sehr groß ist.',
-  'Hauptsache der Code läuft einmal lokal durch.',
-  'Solche Details übernimmt später das Code-Review-Team.',
-  'Das ist nur Theorie und im Alltag kaum relevant.',
-  'Moderne Editoren korrigieren das automatisch.',
-  'Das betrifft nur sehr erfahrene Entwickler.'
+  'Erst über Struktur nachdenken, wenn das Projekt groß geworden ist.',
+  'Nur prüfen, ob der Code einmal lokal durchläuft.',
+  'Solche Details dem späteren Code-Review überlassen.',
+  'Das Thema überspringen, weil es im Alltag selten gebraucht wird.',
+  'Darauf vertrauen, dass der Editor das automatisch korrigiert.',
+  'Das Thema vorerst den erfahrenen Kollegen überlassen.'
 ];
 
 type PracticeQuestionVariant = {
@@ -637,7 +637,7 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
         quiz: [
           {
             id: `${id}-q1`,
-            prompt: `Welche Aussage passt am besten zu "${lessonSeed.title}"?`,
+            prompt: `Welches Vorgehen passt am besten zum Thema "${lessonSeed.title}"?`,
             options: conceptQuestion.options,
             correctOptionId: conceptQuestion.correctOptionId,
             explanation: lessonSeed.bestPractice,

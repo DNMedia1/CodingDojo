@@ -7,10 +7,10 @@ export const projects: PracticeProject[] = [
     title: 'To-do CLI',
     difficulty: 'basic',
     duration: '45-60 Min.',
-    summary: 'Baue ein Kommandozeilen-Tool, das Tasks hinzufügt, auflistet und abschließt.',
-    requirements: ['Speichere Tasks in einer JSON-Datei.', 'Unterstütze add, list und complete.', 'Gib hilfreiche Fehlermeldungen für unbekannte Commands aus.'],
-    hints: ['Nutze pathlib für Dateizugriff.', 'Trenne Parsing von Task-Logik.'],
-    solutionNotes: ['Eine gute Lösung hat einen Task-Typ, load/save-Helfer und einen kleinen Command Dispatcher.']
+    summary: 'Baue ein Kommandozeilen-Tool, mit dem du Aufgaben anlegst, auflistest und abhakst — gespeichert wird alles in einer JSON-Datei.',
+    requirements: ['Speichere die Aufgaben dauerhaft in einer JSON-Datei.', 'Unterstütze die drei Befehle add, list und complete.', 'Gib bei unbekannten Befehlen eine hilfreiche Fehlermeldung aus.'],
+    hints: ['Nutze pathlib für den Dateizugriff.', 'Trenne das Einlesen der Befehle von der eigentlichen Task-Logik.'],
+    solutionNotes: ['Eine gute Lösung hat einen eigenen Task-Typ, kleine load/save-Helfer und einen zentralen Befehls-Verteiler.']
   },
   {
     id: 'python-fastapi-mini-api',
@@ -18,10 +18,10 @@ export const projects: PracticeProject[] = [
     title: 'FastAPI Mini API',
     difficulty: 'intermediate',
     duration: '90 Min.',
-    summary: 'Erstelle eine kleine REST API für Lektionen und Fortschritt.',
-    requirements: ['Expose GET /lessons.', 'Expose POST /progress.', 'Validiere Request Bodies mit Pydantic.'],
-    hints: ['Starte mit In-Memory-Daten.', 'Nutze typisierte Response Models.'],
-    solutionNotes: ['Lege Datenzugriff hinter ein Repository, damit PostgreSQL später leicht folgen kann.']
+    summary: 'Erstelle eine kleine REST API, die Lektionen ausliefert und abgeschlossenen Lernfortschritt entgegennimmt.',
+    requirements: ['Biete GET /lessons an und liefere alle Lektionen als JSON.', 'Biete POST /progress an und speichere eine abgeschlossene Lektion.', 'Validiere eingehende Request Bodies mit Pydantic-Modellen.'],
+    hints: ['Starte mit Daten im Arbeitsspeicher — eine Datenbank kommt später.', 'Nutze typisierte Response Models für saubere Antworten.'],
+    solutionNotes: ['Lege den Datenzugriff hinter ein Repository, damit später PostgreSQL einspringen kann, ohne dass sich die Routen ändern.']
   },
   {
     id: 'csharp-console-tracker',
@@ -29,10 +29,10 @@ export const projects: PracticeProject[] = [
     title: 'Console XP Tracker',
     difficulty: 'basic',
     duration: '45 Min.',
-    summary: 'Tracke abgeschlossene Lektionen und XP in einer C# Konsolen-App.',
-    requirements: ['Erstelle LessonProgress und UserProfile Klassen.', 'Vergib XP nur einmal pro Lektion.', 'Gib eine Level-Zusammenfassung aus.'],
-    hints: ['Nutze List<T> und LINQ für Auswertungen.', 'Halte XP-Logik in einem Service.'],
-    solutionNotes: ['Completion sollte idempotent sein, genau wie in dieser Web-App.']
+    summary: 'Baue eine C#-Konsolen-App, die abgeschlossene Lektionen und gesammelte XP verwaltet.',
+    requirements: ['Modelliere die Klassen LessonProgress und UserProfile.', 'Vergib XP für jede Lektion nur ein einziges Mal.', 'Gib am Ende eine Zusammenfassung mit Level und Gesamt-XP aus.'],
+    hints: ['Nutze List<T> und LINQ für die Auswertungen.', 'Bündle die XP-Regeln in einer eigenen Service-Klasse.'],
+    solutionNotes: ['Der Lektionsabschluss sollte idempotent sein: Mehrfaches Abschließen darf keine zusätzlichen XP vergeben — genau wie in dieser App.']
   },
   {
     id: 'csharp-aspnet-api',
@@ -40,10 +40,10 @@ export const projects: PracticeProject[] = [
     title: 'ASP.NET Core Progress API',
     difficulty: 'intermediate',
     duration: '2 Std.',
-    summary: 'Entwirf Endpunkte für Kursfortschritt mit EF-Core-fähigen Modellen.',
-    requirements: ['Erstelle einen ProgressController.', 'Füge DTOs für Completion Requests hinzu.', 'Gib bei Erfolg 204 zurück.'],
-    hints: ['Halte Controller schlank.', 'Nutze Services für Regeln.'],
-    solutionNotes: ['Die Datenbank sollte doppelte Completion Rows verhindern.']
+    summary: 'Entwirf eine ASP.NET Core API, die Kursfortschritt speichert und für Entity Framework Core vorbereitet ist.',
+    requirements: ['Erstelle einen ProgressController mit klaren Routen.', 'Lege DTOs für eingehende Completion-Requests an.', 'Antworte bei erfolgreichem Abschluss mit Status 204 (No Content).'],
+    hints: ['Halte den Controller schlank und delegiere die Regeln an einen Service.', 'Entscheide bewusst, welche Felder ins DTO gehören und welche intern bleiben.'],
+    solutionNotes: ['Die Datenbank sollte doppelte Abschlüsse über einen Unique Constraint verhindern — nicht nur der Anwendungscode.']
   },
   {
     id: 'java-oop-kata',
@@ -51,10 +51,10 @@ export const projects: PracticeProject[] = [
     title: 'OOP Badge Kata',
     difficulty: 'basic',
     duration: '60 Min.',
-    summary: 'Vergib Badges basierend auf abgeschlossenen Lektionen.',
-    requirements: ['Erstelle Badge, Learner und BadgeService.', 'Vergib Starter ab 3 Lektionen.', 'Verhindere doppelte Badges.'],
-    hints: ['Nutze Set für Eindeutigkeit.', 'Schreibe einfache Service-Tests.'],
-    solutionNotes: ['Komposition ist für diese Aufgabe robuster als Vererbung.']
+    summary: 'Schreibe ein kleines Java-Programm, das Lernenden anhand ihrer abgeschlossenen Lektionen Badges verleiht.',
+    requirements: ['Modelliere die Klassen Badge, Learner und BadgeService.', 'Verleihe das Starter-Badge ab 3 abgeschlossenen Lektionen.', 'Stelle sicher, dass niemand dasselbe Badge doppelt erhält.'],
+    hints: ['Ein Set eignet sich, um Duplikate strukturell auszuschließen.', 'Ein paar kleine Tests für den BadgeService geben dir Sicherheit.'],
+    solutionNotes: ['Komposition — der Service nutzt Learner und Badges — ist hier robuster als eine Vererbungshierarchie.']
   },
   {
     id: 'java-spring-rest',
@@ -62,10 +62,10 @@ export const projects: PracticeProject[] = [
     title: 'Spring Boot REST API',
     difficulty: 'intermediate',
     duration: '2 Std.',
-    summary: 'Expose Lektionen und Quizversuche über Spring Boot Endpunkte.',
-    requirements: ['Erstelle Controller für lessons und attempts.', 'Füge Service-Klassen hinzu.', 'Gib sinnvolle HTTP-Statuscodes zurück.'],
-    hints: ['Trenne DTOs von Entities.', 'Starte ohne Datenbank.'],
-    solutionNotes: ['Eine spätere Version kann Spring Data Repositories ergänzen.']
+    summary: 'Baue eine Spring-Boot-API, die Lektionen ausliefert und Quizversuche entgegennimmt.',
+    requirements: ['Erstelle je einen Controller für Lektionen und Quizversuche.', 'Verschiebe die Fachlogik in eigene Service-Klassen.', 'Antworte mit passenden HTTP-Statuscodes wie 200, 201 und 404.'],
+    hints: ['Trenne die DTOs der API von den internen Entities.', 'Starte ohne Datenbank — Daten im Speicher reichen für den Anfang.'],
+    solutionNotes: ['In einer späteren Ausbaustufe übernehmen Spring Data Repositories die Persistenz.']
   },
   {
     id: 'html-landing-page',
@@ -73,10 +73,10 @@ export const projects: PracticeProject[] = [
     title: 'Semantische Landingpage',
     difficulty: 'basic',
     duration: '45 Min.',
-    summary: 'Baue eine semantische Seite für einen fiktiven Kurs.',
-    requirements: ['Nutze header, main, section, article und footer.', 'Füge eine zugängliche Navigation hinzu.', 'Nutze sinnvolle Heading-Level.'],
-    hints: ['Schreibe zuerst die Struktur, dann Styling.', 'Prüfe die Heading-Outline.'],
-    solutionNotes: ['Das HTML sollte auch ohne CSS verständlich bleiben.']
+    summary: 'Baue die Landingpage für einen fiktiven Programmierkurs — mit sauberer, semantischer HTML-Struktur.',
+    requirements: ['Strukturiere die Seite mit header, main, section, article und footer.', 'Baue eine Navigation, die auch mit Tastatur und Screenreader funktioniert.', 'Verwende eine logische Überschriften-Hierarchie ohne übersprungene Level.'],
+    hints: ['Schreibe zuerst die komplette Struktur und gestalte erst danach.', 'Lies deine Überschriften wie ein Inhaltsverzeichnis — ergibt es Sinn?'],
+    solutionNotes: ['Eine gute Lösung bleibt auch ganz ohne CSS lesbar und verständlich.']
   },
   {
     id: 'css-responsive-cards',
@@ -84,10 +84,10 @@ export const projects: PracticeProject[] = [
     title: 'Responsive Card Layout',
     difficulty: 'basic',
     duration: '60 Min.',
-    summary: 'Erstelle ein responsives Card Grid mit Flexbox und CSS Grid.',
-    requirements: ['Mobile: einspaltiges Layout.', 'Breitere Screens: zwei Spalten.', 'Sichtbare Focus States.'],
-    hints: ['Nutze gap und minmax.', 'Vermeide fixe Card-Breiten.'],
-    solutionNotes: ['Stabile Abstände sind wichtiger als laute Dekoration.']
+    summary: 'Baue ein Karten-Layout, das sich von einer Spalte auf dem Handy bis zu zwei Spalten auf größeren Screens anpasst.',
+    requirements: ['Auf dem Handy stehen die Karten untereinander in einer Spalte.', 'Ab Tablet-Breite ordnen sich die Karten in zwei Spalten an.', 'Alle interaktiven Elemente haben sichtbare Focus-Zustände.'],
+    hints: ['gap und minmax() ersparen dir mühsame Margin-Rechnereien.', 'Vermeide feste Kartenbreiten — lass das Grid die Größen verteilen.'],
+    solutionNotes: ['Gleichmäßige Abstände und ruhige Proportionen wirken hochwertiger als auffällige Dekoration.']
   },
   {
     id: 'javascript-quiz-app',
@@ -95,10 +95,10 @@ export const projects: PracticeProject[] = [
     title: 'Quiz App',
     difficulty: 'basic',
     duration: '90 Min.',
-    summary: 'Baue ein Browser-Quiz mit direktem Feedback.',
-    requirements: ['Rendere Fragen aus einem Array.', 'Tracke ausgewählte Antworten.', 'Zeige Score und Erklärungen.'],
-    hints: ['Trenne Fragendaten von UI-Code.', 'Nutze kleine Komponenten oder Event Delegation.'],
-    solutionNotes: ['Das ist ein guter Zwischenschritt zu React State Management.']
+    summary: 'Baue ein Quiz im Browser, das Fragen anzeigt und Antworten sofort bewertet.',
+    requirements: ['Rendere die Fragen aus einem Daten-Array statt aus festem HTML.', 'Merke dir die ausgewählten Antworten in einem State-Objekt.', 'Zeige nach der Auswertung Punktzahl und Erklärungen an.'],
+    hints: ['Halte Fragendaten und UI-Code strikt getrennt.', 'Event Delegation erspart dir viele einzelne Listener.'],
+    solutionNotes: ['Dieses Projekt ist die ideale Vorstufe zum State-Management in React.']
   },
   {
     id: 'javascript-fetch-app',
@@ -106,10 +106,10 @@ export const projects: PracticeProject[] = [
     title: 'Fetch API Explorer',
     difficulty: 'intermediate',
     duration: '90 Min.',
-    summary: 'Lade API-Daten und rendere Loading-, Success- und Error-State.',
-    requirements: ['Nutze async/await.', 'Prüfe response.ok.', 'Zeige Retry nach Fehlern.'],
-    hints: ['Schreibe einen Fetch Helper.', 'Halte Loading State explizit.'],
-    solutionNotes: ['Zuverlässige UI entsteht vor allem durch klares State Modeling.']
+    summary: 'Lade Daten von einer öffentlichen API und zeige Lade-, Erfolgs- und Fehlerzustand sauber an.',
+    requirements: ['Nutze async/await für die Anfragen.', 'Prüfe response.ok, bevor du die Antwort weiterverarbeitest.', 'Biete nach einem Fehler einen Retry-Button an.'],
+    hints: ['Ein kleiner Fetch-Helfer vermeidet kopierten Code.', 'Modelliere den Ladezustand explizit, statt ihn aus Nebeneffekten zu erraten.'],
+    solutionNotes: ['Zuverlässige Oberflächen entstehen vor allem durch sauber modellierte Zustände.']
   },
   {
     id: 'typescript-domain-models',
