@@ -1,4 +1,4 @@
-import type { CodingConceptCheck, Course, CourseModule, Difficulty, FillBlankTask, LanguageId, Lesson, QuizOption, QuizQuestion } from '../models/learning';
+import type { CodingConceptCheck, Course, CourseModule, Difficulty, Exercise, FillBlankTask, LanguageId, Lesson, QuizOption, QuizQuestion, SkillTag } from '../models/learning';
 
 type LessonSeed = {
   title: string;
@@ -683,6 +683,76 @@ function buildFillBlank(codeLanguage: string, code: string, lessonTitle: string)
   };
 }
 
+function inferSkillTags(courseSeed: CourseSeed, lessonSeed: LessonSeed): SkillTag[] {
+  const text = `${courseSeed.id} ${lessonSeed.title} ${lessonSeed.theory} ${lessonSeed.code} ${lessonSeed.task}`.toLowerCase();
+  const tags = new Set<SkillTag>();
+
+  if (text.includes('variable') || text.includes('const') || text.includes('let') || text.includes('name =')) tags.add('variables');
+  if (text.includes('function') || text.includes('def ') || text.includes('method') || text.includes('methode')) tags.add('functions');
+  if (text.includes('list') || text.includes('array') || text.includes('set') || text.includes('collection')) tags.add('arrays');
+  if (text.includes('object') || text.includes('dictionary') || text.includes('interface') || text.includes('class')) tags.add('objects');
+  if (text.includes('async') || text.includes('await') || text.includes('promise')) tags.add('async');
+  if (text.includes('fetch') || text.includes('api') || text.includes('http') || text.includes('route')) tags.add('http');
+  if (courseSeed.id === 'react' && (text.includes('state') || text.includes('usestate'))) tags.add('react-state');
+  if (courseSeed.id === 'react' && (text.includes('effect') || text.includes('useeffect'))) tags.add('react-effects');
+  if (courseSeed.id === 'sql' && text.includes('join')) tags.add('sql-joins');
+  if (courseSeed.id === 'git' && (text.includes('branch') || text.includes('merge') || text.includes('rebase'))) tags.add('git-branches');
+  if (text.includes('debug') || text.includes('fehler') || text.includes('error') || text.includes('except')) tags.add('debugging');
+  if (text.includes('clean') || text.includes('struktur') || text.includes('review') || text.includes('lesbar')) tags.add('clean-code');
+  if (courseSeed.id === 'backend' || text.includes('endpoint') || text.includes('controller')) tags.add('api-design');
+  if (courseSeed.id === 'automation' && text.includes('webhook')) tags.add('automation-webhooks');
+
+  return tags.size > 0 ? [...tags] : ['clean-code'];
+}
+
+function buildLessonExercises(courseSeed: CourseSeed, lessonSeed: LessonSeed, lessonId: string, quiz: QuizQuestion[], fillBlank: FillBlankTask, codingChallenge: ReturnType<typeof buildCodingChallenge>): Exercise[] {
+  const skillTags = inferSkillTags(courseSeed, lessonSeed);
+  const multipleChoiceExercises: Exercise[] = quiz.map((question) => ({
+    id: question.id,
+    type: 'multiple_choice',
+    prompt: question.prompt,
+    skillTags,
+    difficulty: question.difficulty,
+    options: question.options.map((option) => {
+      const isCorrect = option.id === question.correctOptionId;
+      return {
+        id: option.id,
+        text: option.text,
+        isCorrect,
+        feedback: isCorrect
+          ? `Richtig: ${question.explanation}`
+          : `Nicht ganz: "${option.text}" ist hier die schwächere Wahl. ${question.explanation}`
+      };
+    }),
+    explanation: question.explanation
+  }));
+
+  return [
+    ...multipleChoiceExercises,
+    {
+      id: `${lessonId}-fill-blank`,
+      type: 'fill_blank',
+      prompt: fillBlank.instruction,
+      skillTags,
+      difficulty: lessonSeed.difficulty ?? 'basic',
+      expectedAnswer: fillBlank.answer,
+      acceptedAnswers: [fillBlank.answer],
+      code: fillBlank.code,
+      explanation: `Die richtige Ergänzung ist "${fillBlank.answer}". ${fillBlank.hint}`
+    },
+    {
+      id: `${lessonId}-code-completion`,
+      type: 'code_completion',
+      prompt: codingChallenge.prompt,
+      skillTags,
+      difficulty: lessonSeed.difficulty ?? 'basic',
+      code: codingChallenge.starterCode,
+      solution: codingChallenge.solution,
+      explanation: `Diese Codeaufgabe prüft, ob du die Kernbausteine der Lektion selbst zusammensetzen kannst: ${codingChallenge.requiredConcepts.map((concept) => concept.label).join(', ')}.`
+    }
+  ];
+}
+
 export const courses: Course[] = courseSeeds.map((courseSeed) => ({
   ...courseSeed,
   modules: courseSeed.modules.map((moduleSeed, moduleIndex): CourseModule => ({
@@ -693,6 +763,9 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
       const slug = lessonSeed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const id = `${courseSeed.id}-${slug || `lesson-${lessonIndex + 1}`}`;
       const seedHash = hashString(id);
+      const fillBlank = buildFillBlank(courseSeed.codeLanguage, lessonSeed.code, lessonSeed.title);
+      const quiz = buildLessonQuizQuestions(courseSeed, moduleSeed, lessonSeed, id, lessonIndex, seedHash);
+      const codingChallenge = buildCodingChallenge(courseSeed, lessonSeed);
       return {
         id,
         title: lessonSeed.title,
@@ -701,14 +774,15 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
         theory: lessonSeed.theory,
         knowledge: buildKnowledgePoints(courseSeed, moduleSeed, lessonSeed),
         codeExample: { language: courseSeed.codeLanguage, code: lessonSeed.code },
-        fillBlank: buildFillBlank(courseSeed.codeLanguage, lessonSeed.code, lessonSeed.title),
-        quiz: buildLessonQuizQuestions(courseSeed, moduleSeed, lessonSeed, id, lessonIndex, seedHash),
+        fillBlank,
+        quiz,
+        exercises: buildLessonExercises(courseSeed, lessonSeed, id, quiz, fillBlank, codingChallenge),
         practice: {
           prompt: lessonSeed.task,
           checklist: ['Benenne Daten und Verhalten klar.', 'Implementiere zuerst den normalen Fall.', 'Füge ein kleines Beispiel hinzu, das die Lösung beweist.'],
           hint: lessonSeed.bestPractice
         },
-        codingChallenge: buildCodingChallenge(courseSeed, lessonSeed)
+        codingChallenge
       };
     })
   }))

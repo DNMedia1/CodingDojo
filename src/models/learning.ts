@@ -13,6 +13,32 @@ export type LanguageId =
   | 'automation';
 export type Difficulty = 'basic' | 'intermediate' | 'advanced';
 export type ThemeMode = 'dark' | 'light';
+export type ExerciseType =
+  | 'multiple_choice'
+  | 'true_false'
+  | 'fill_blank'
+  | 'code_output'
+  | 'debugging'
+  | 'ordering'
+  | 'code_completion'
+  | 'short_answer'
+  | 'scenario'
+  | 'mini_project_step';
+export type SkillTag =
+  | 'variables'
+  | 'functions'
+  | 'arrays'
+  | 'objects'
+  | 'async'
+  | 'http'
+  | 'react-state'
+  | 'react-effects'
+  | 'sql-joins'
+  | 'git-branches'
+  | 'debugging'
+  | 'clean-code'
+  | 'api-design'
+  | 'automation-webhooks';
 
 export interface QuizOption {
   id: string;
@@ -26,6 +52,27 @@ export interface QuizQuestion {
   correctOptionId: string;
   explanation: string;
   difficulty: Difficulty;
+}
+
+export interface ExerciseOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+  feedback: string;
+}
+
+export interface Exercise {
+  id: string;
+  type: ExerciseType;
+  prompt: string;
+  skillTags: SkillTag[];
+  difficulty: Difficulty;
+  options?: ExerciseOption[];
+  expectedAnswer?: string;
+  acceptedAnswers?: string[];
+  code?: string;
+  solution?: string;
+  explanation: string;
 }
 
 export interface CodeExample {
@@ -71,6 +118,7 @@ export interface Lesson {
   codeExample: CodeExample;
   fillBlank: FillBlankTask;
   quiz: QuizQuestion[];
+  exercises: Exercise[];
   practice: PracticeTask;
   codingChallenge?: CodingChallenge;
 }

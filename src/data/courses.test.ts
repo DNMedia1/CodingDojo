@@ -52,6 +52,28 @@ describe('course content', () => {
     }
   });
 
+  it('exposes generated exercises for every lesson with skill tags and answer feedback', () => {
+    for (const course of courses) {
+      for (const module of course.modules) {
+        for (const lesson of module.lessons) {
+          expect(lesson.exercises.length).toBeGreaterThanOrEqual(lesson.quiz.length + 2);
+          expect(lesson.exercises.map((exercise) => exercise.type)).toEqual(
+            expect.arrayContaining(['multiple_choice', 'fill_blank', 'code_completion'])
+          );
+
+          for (const exercise of lesson.exercises) {
+            expect(exercise.skillTags.length).toBeGreaterThan(0);
+            expect(exercise.explanation.length).toBeGreaterThan(20);
+
+            for (const option of exercise.options ?? []) {
+              expect(option.feedback.length).toBeGreaterThan(20);
+            }
+          }
+        }
+      }
+    }
+  });
+
   it('builds three-option quiz questions with varied correct positions', () => {
     const allQuestions = courses.flatMap((course) =>
       course.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.quiz))
