@@ -62,6 +62,18 @@ export interface ExerciseOption {
   feedback: string;
 }
 
+export interface ExerciseToken {
+  id: string;
+  text: string;
+  feedback: string;
+}
+
+export interface ExerciseCodeSlot {
+  id: string;
+  placeholder: string;
+  answer: string;
+}
+
 export interface Exercise {
   id: string;
   type: ExerciseType;
@@ -72,8 +84,16 @@ export interface Exercise {
   expectedAnswer?: string;
   acceptedAnswers?: string[];
   code?: string;
+  codeSlots?: ExerciseCodeSlot[];
+  tokens?: ExerciseToken[];
   solution?: string;
   explanation: string;
+}
+
+export interface ContentSource {
+  label: string;
+  url: string;
+  note: string;
 }
 
 export interface ReviewCard {
@@ -149,6 +169,7 @@ export interface Lesson {
   exercises: Exercise[];
   practice: PracticeTask;
   codingChallenge?: CodingChallenge;
+  sourceReferences?: ContentSource[];
 }
 
 export interface CourseModule {

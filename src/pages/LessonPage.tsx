@@ -58,7 +58,7 @@ export function LessonPage() {
   const completed = lesson && course ? isLessonCompleted(progress, course.id, lesson.id) : false;
 
   if (!lesson || !course) return <Header title="Lektion nicht gefunden" subtitle="Gehe zu einem Kurs und wähle eine andere Lektion." />;
-  const quizExercises = lesson.exercises.filter((exercise) => exercise.type === 'multiple_choice' || exercise.type === 'true_false' || exercise.type === 'scenario');
+  const quizExercises = lesson.exercises.filter((exercise) => exercise.type !== 'fill_blank' && exercise.type !== 'short_answer');
   const quizComplete = quizExercises.every((exercise) => answeredExercises[exercise.id]);
   const codeValue = lesson.codingChallenge ? (codeDrafts[lesson.id] ?? lesson.codingChallenge.starterCode) : '';
   const feedback = codeFeedback[lesson.id];
@@ -217,6 +217,19 @@ export function LessonPage() {
                 </div>
               ))}
             </div>
+            {lesson.sourceReferences?.length ? (
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">Quellen</p>
+                <div className="mt-3 grid gap-2">
+                  {lesson.sourceReferences.map((source) => (
+                    <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-white/10 bg-ink/50 p-3 text-sm leading-6 text-sky-100">
+                      <span className="font-extrabold">{source.label}</span>
+                      <span className="block text-muted">{source.note}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

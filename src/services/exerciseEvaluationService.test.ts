@@ -41,4 +41,31 @@ describe('exerciseEvaluationService', () => {
 
     expect(evaluateExerciseAnswer(exercise, ' RETURN ').correct).toBe(true);
   });
+
+  it('evaluates ordered code-token answers', () => {
+    const exercise: Exercise = {
+      id: 'exercise-code-token',
+      type: 'code_completion',
+      prompt: 'Setze die Bausteine ein.',
+      skillTags: ['variables'],
+      difficulty: 'basic',
+      code: 'print(__slot_1__"{__slot_2__}")',
+      codeSlots: [
+        { id: 'slot-1', placeholder: '__slot_1__', answer: 'f' },
+        { id: 'slot-2', placeholder: '__slot_2__', answer: 'name' }
+      ],
+      expectedAnswer: 'f\nname',
+      explanation: 'Das f aktiviert den f-String, danach wird die Variable name eingesetzt.'
+    };
+
+    expect(evaluateExerciseAnswer(exercise, 'f\nname')).toMatchObject({
+      correct: true,
+      correctAnswer: 'f\nname',
+      feedback: 'Das f aktiviert den f-String, danach wird die Variable name eingesetzt.'
+    });
+    expect(evaluateExerciseAnswer(exercise, 'name\nf')).toMatchObject({
+      correct: false,
+      correctAnswer: 'f\nname'
+    });
+  });
 });

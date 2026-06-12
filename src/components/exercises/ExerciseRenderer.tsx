@@ -1,5 +1,6 @@
 import type { Exercise, ReviewRating } from '../../models/learning';
 import type { ExerciseResult } from '../../services/exerciseEvaluationService';
+import { CodeCompletionExercise } from './CodeCompletionExercise';
 import { MultipleChoiceExercise } from './MultipleChoiceExercise';
 
 export type ExerciseRendererProps = {
@@ -8,7 +9,11 @@ export type ExerciseRendererProps = {
 };
 
 export function ExerciseRenderer({ exercise, onAnswered }: ExerciseRendererProps) {
-  if (exercise.type === 'multiple_choice' || exercise.type === 'true_false' || exercise.type === 'scenario') {
+  if (exercise.type === 'code_completion' && exercise.tokens?.length && exercise.codeSlots?.length) {
+    return <CodeCompletionExercise exercise={exercise} onAnswered={onAnswered} />;
+  }
+
+  if (exercise.options?.length) {
     return <MultipleChoiceExercise exercise={exercise} onAnswered={onAnswered} />;
   }
 

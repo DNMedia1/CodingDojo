@@ -17,7 +17,7 @@ describe('course content', () => {
         expect(module.lessons.length).toBeGreaterThanOrEqual(3);
         for (const lesson of module.lessons) {
           expect(lesson.theory.length).toBeGreaterThan(80);
-          expect(lesson.knowledge).toHaveLength(4);
+          expect(lesson.knowledge.length).toBeGreaterThanOrEqual(4);
           for (const knowledgePoint of lesson.knowledge) {
             expect(knowledgePoint.length).toBeGreaterThan(40);
           }
@@ -56,9 +56,19 @@ describe('course content', () => {
     for (const course of courses) {
       for (const module of course.modules) {
         for (const lesson of module.lessons) {
-          expect(lesson.exercises.length).toBeGreaterThanOrEqual(lesson.quiz.length + 2);
+          expect(lesson.exercises.length).toBeGreaterThanOrEqual(12);
           expect(lesson.exercises.map((exercise) => exercise.type)).toEqual(
-            expect.arrayContaining(['multiple_choice', 'fill_blank', 'code_completion'])
+            expect.arrayContaining([
+              'multiple_choice',
+              'true_false',
+              'fill_blank',
+              'code_output',
+              'debugging',
+              'ordering',
+              'code_completion',
+              'scenario',
+              'mini_project_step'
+            ])
           );
 
           for (const exercise of lesson.exercises) {
@@ -72,6 +82,42 @@ describe('course content', () => {
         }
       }
     }
+  });
+
+  it('turns code-completion exercises into tappable token puzzles', () => {
+    const allCodeCompletionExercises = courses.flatMap((course) =>
+      course.modules.flatMap((module) =>
+        module.lessons.flatMap((lesson) => lesson.exercises.filter((exercise) => exercise.type === 'code_completion'))
+      )
+    );
+
+    expect(allCodeCompletionExercises.length).toBeGreaterThan(0);
+    for (const exercise of allCodeCompletionExercises) {
+      expect(exercise.code).toContain('__slot_');
+      expect(exercise.codeSlots?.length).toBeGreaterThanOrEqual(1);
+      expect(exercise.tokens?.length).toBeGreaterThanOrEqual(exercise.codeSlots?.length ?? 0);
+      expect(exercise.expectedAnswer).toBe(exercise.codeSlots?.map((slot) => slot.answer).join('\n'));
+    }
+  });
+
+  it('uses the Python variables lesson as a richer f-string quality pilot', () => {
+    const pythonVariables = courses
+      .find((course) => course.id === 'python')
+      ?.modules.flatMap((module) => module.lessons)
+      .find((lesson) => lesson.id === 'python-variablen-und-typen');
+
+    expect(pythonVariables).toBeDefined();
+    expect(pythonVariables?.theory).toContain('f-Strings');
+    expect(pythonVariables?.theory).toContain('{name}');
+    expect(pythonVariables?.knowledge.length).toBeGreaterThanOrEqual(8);
+    expect(pythonVariables?.sourceReferences?.map((source) => source.url)).toEqual(
+      expect.arrayContaining([
+        'https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals',
+        'https://docs.python.org/3/reference/lexical_analysis.html#f-strings'
+      ])
+    );
+    expect(pythonVariables?.exercises.length).toBeGreaterThanOrEqual(16);
+    expect(pythonVariables?.exercises.some((exercise) => exercise.prompt.includes(':.2f'))).toBe(true);
   });
 
   it('builds three-option quiz questions with varied correct positions', () => {

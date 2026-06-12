@@ -28,4 +28,38 @@ describe('ExerciseRenderer', () => {
       'wrong'
     );
   });
+
+  it('lets learners tap code tokens into blanks before checking the answer', () => {
+    const exercise: Exercise = {
+      id: 'exercise-f-string',
+      type: 'code_completion',
+      prompt: 'Setze die fehlenden Bausteine in den Python-Code ein.',
+      skillTags: ['variables'],
+      difficulty: 'basic',
+      code: 'name = "Mina"\nprint(__slot_1__"{__slot_2__} lernt Python")',
+      codeSlots: [
+        { id: 'slot-1', placeholder: '__slot_1__', answer: 'f' },
+        { id: 'slot-2', placeholder: '__slot_2__', answer: 'name' }
+      ],
+      tokens: [
+        { id: 'token-name', text: 'name', feedback: 'name ist die Variable, deren Wert eingesetzt wird.' },
+        { id: 'token-f', text: 'f', feedback: 'Das f vor dem String aktiviert den f-String.' },
+        { id: 'token-str', text: 'str', feedback: 'str wandelt Werte um, aktiviert aber keinen f-String.' }
+      ],
+      expectedAnswer: 'f\nname',
+      explanation: 'Das f aktiviert den f-String, und {name} setzt den Wert der Variable ein.'
+    };
+    const onAnswered = vi.fn();
+
+    render(<ExerciseRenderer exercise={exercise} onAnswered={onAnswered} />);
+    fireEvent.click(screen.getByRole('button', { name: 'f' }));
+    fireEvent.click(screen.getByRole('button', { name: 'name' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Antwort prüfen' }));
+
+    expect(screen.getByText(/Das f aktiviert den f-String/)).toBeInTheDocument();
+    expect(onAnswered).toHaveBeenCalledWith(
+      expect.objectContaining({ exerciseId: 'exercise-f-string', correct: true, selectedAnswer: 'f\nname' }),
+      'correct'
+    );
+  });
 });

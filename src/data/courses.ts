@@ -1,4 +1,4 @@
-import type { CodingConceptCheck, Course, CourseModule, Difficulty, Exercise, FillBlankTask, LanguageId, Lesson, QuizOption, QuizQuestion, SkillTag } from '../models/learning';
+import type { CodingConceptCheck, ContentSource, Course, CourseModule, Difficulty, Exercise, FillBlankTask, LanguageId, Lesson, QuizOption, QuizQuestion, SkillTag } from '../models/learning';
 
 type LessonSeed = {
   title: string;
@@ -8,6 +8,16 @@ type LessonSeed = {
   bestPractice: string;
   trap: string;
   difficulty?: Difficulty;
+};
+
+type LessonEnhancement = Partial<LessonSeed> & {
+  knowledge?: string[];
+  sourceReferences?: ContentSource[];
+  extraExercises?: (input: {
+    lessonId: string;
+    skillTags: SkillTag[];
+    difficulty: Difficulty;
+  }) => Exercise[];
 };
 
 type ModuleSeed = {
@@ -274,6 +284,108 @@ const courseSeeds: CourseSeed[] = [
     ])
   ])
 ];
+
+const lessonEnhancements: Record<string, LessonEnhancement> = {
+  'python-variablen-und-typen': {
+    theory:
+      'Variablen sind Namen, die auf Werte zeigen. Der Typ steckt in Python am Wert selbst, nicht am Namen. Du kannst also name = "Mina" lesen als: Der Name name verweist gerade auf den Textwert "Mina". f-Strings machen solche Werte sichtbar, indem du vor den String ein f schreibst und Variablen oder Ausdrücke in geschweifte Klammern setzt, zum Beispiel f"{name} hat {xp} XP". Das ist nicht nur bequemer als String-Verkettung, sondern auch lesbarer: Du siehst den Satz fast so, wie er später ausgegeben wird. Format-Specifier wie {price:.2f} steuern zusätzlich, wie ein Wert dargestellt wird, zum Beispiel mit zwei Nachkommastellen.',
+    code:
+      'name = "Mina"\nxp = 420\nprice = 12.5\nis_active = True\n\nprint(f"{name} hat {xp} XP")\nprint(f"Preis: {price:.2f} EUR")\nprint(f"Aktiv: {is_active}")',
+    task: 'Lege Variablen für Name, XP, Preis und Aktiv-Status an. Gib danach zwei gut lesbare Sätze mit f-Strings aus, davon einen mit zwei Nachkommastellen.',
+    bestPractice: 'Nutze sprechende Variablennamen und f-Strings, wenn du Werte in gut lesbare Ausgaben einsetzt.',
+    trap: 'Das f vor dem String vergessen oder Variablen als normalen Text in den String schreiben.',
+    knowledge: [
+      'Variablen sind keine Boxen, sondern Namen für Werte. Wenn du name = "Mina" schreibst, zeigt der Name name auf den Textwert "Mina".',
+      'Der Typ hängt am Wert: "Mina" ist ein String, 420 ist ein Integer, 12.5 ist ein Float und True ist ein Boolean.',
+      'Ein f-String beginnt mit f oder F direkt vor dem öffnenden Anführungszeichen. Ohne dieses f bleiben {name} und {xp} nur normaler Text.',
+      'In geschweiften Klammern steht ein Python-Ausdruck. Häufig ist das eine Variable wie {name}, möglich sind aber auch kleine Ausdrücke wie {xp + 10}.',
+      'Format-Specifier stehen nach einem Doppelpunkt. {price:.2f} bedeutet: Zeige price als Kommazahl mit genau zwei Nachkommastellen.',
+      'F-Strings sind besonders lesbar, wenn der Satz kurz bleibt. Wenn der Ausdruck in den Klammern zu lang wird, berechne ihn vorher in einer eigenen Variable.',
+      'Sprechende Namen machen die Ausgabe verständlich. user_xp oder price_eur erklären mehr als x, data oder value2.',
+      'Eine typische Fehlerquelle sind verschachtelte Anführungszeichen. Wenn außen doppelte Quotes stehen, nutze innen einfache Quotes oder berechne Werte vorher.'
+    ],
+    sourceReferences: [
+      {
+        label: 'Python Tutorial: Formatted String Literals',
+        url: 'https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals',
+        note: 'Offizielle Python-Einführung zu f-Strings, Ausdrücken in Klammern und Format-Specifiern.'
+      },
+      {
+        label: 'Python Reference: f-strings',
+        url: 'https://docs.python.org/3/reference/lexical_analysis.html#f-strings',
+        note: 'Offizielle Sprachreferenz zur Syntax und Auswertung von f-Strings.'
+      },
+      {
+        label: 'PEP 498: Literal String Interpolation',
+        url: 'https://peps.python.org/pep-0498/',
+        note: 'Design-Hintergrund zur Einführung von f-Strings in Python.'
+      }
+    ],
+    extraExercises: ({ lessonId, skillTags, difficulty }) => [
+      {
+        id: `${lessonId}-fstring-format-output`,
+        type: 'code_output',
+        prompt: 'Welche Ausgabe entsteht bei price = 12.5 und print(f"Preis: {price:.2f} EUR")?',
+        skillTags,
+        difficulty,
+        options: [
+          { id: 'a', text: 'Preis: 12.50 EUR', isCorrect: true, feedback: 'Richtig: :.2f formatiert die Zahl mit genau zwei Nachkommastellen.' },
+          { id: 'b', text: 'Preis: {price:.2f} EUR', isCorrect: false, feedback: 'Das passiert nur, wenn das f vor dem String fehlt. Mit f wird der Ausdruck ausgewertet.' },
+          { id: 'c', text: 'Preis: 12.5 EUR', isCorrect: false, feedback: 'Ohne Format-Specifier wäre 12.5 plausibel. :.2f erzwingt aber zwei Nachkommastellen.' }
+        ],
+        explanation: 'Der Format-Specifier :.2f rundet beziehungsweise zeigt eine Kommazahl mit zwei Nachkommastellen an.'
+      },
+      {
+        id: `${lessonId}-fstring-missing-prefix-debug`,
+        type: 'debugging',
+        prompt: 'Der Code print("{name} hat {xp} XP") gibt die Klammern als Text aus. Was fehlt?',
+        skillTags: [...new Set<SkillTag>([...skillTags, 'debugging'])],
+        difficulty,
+        options: [
+          { id: 'a', text: 'Das f direkt vor dem String: print(f"{name} hat {xp} XP")', isCorrect: true, feedback: 'Genau. Erst das f aktiviert die Auswertung der Ausdrücke in geschweiften Klammern.' },
+          { id: 'b', text: 'Ein Semikolon am Zeilenende', isCorrect: false, feedback: 'Python braucht hier kein Semikolon. Das Problem liegt an der String-Formatierung.' },
+          { id: 'c', text: 'Die Variable name muss in Großbuchstaben geschrieben werden', isCorrect: false, feedback: 'Großschreibung ändert nur den Variablennamen. Entscheidend ist das fehlende f vor dem String.' }
+        ],
+        explanation: 'Ohne f ist der String ein normaler Text. Dann werden {name} und {xp} nicht ausgewertet.'
+      },
+      {
+        id: `${lessonId}-fstring-token-puzzle`,
+        type: 'code_completion',
+        prompt: 'Tippe die Bausteine an, damit der f-String Name und XP einsetzt.',
+        skillTags,
+        difficulty,
+        code: 'name = "Mina"\nxp = 420\nprint(__slot_1__"{__slot_2__} hat {__slot_3__} XP")',
+        codeSlots: [
+          { id: 'slot-1', placeholder: '__slot_1__', answer: 'f' },
+          { id: 'slot-2', placeholder: '__slot_2__', answer: 'name' },
+          { id: 'slot-3', placeholder: '__slot_3__', answer: 'xp' }
+        ],
+        tokens: [
+          { id: 'token-f', text: 'f', feedback: 'Das f aktiviert den f-String.' },
+          { id: 'token-name', text: 'name', feedback: 'name ist die Variable für den sichtbaren Namen.' },
+          { id: 'token-xp', text: 'xp', feedback: 'xp ist die Variable für den Zahlenwert.' },
+          { id: 'token-str', text: 'str', feedback: 'str ist hier kein Prefix für f-Strings.' },
+          { id: 'token-print', text: 'print', feedback: 'print steht bereits im Code und gehört nicht in die Lücke.' }
+        ],
+        expectedAnswer: 'f\nname\nxp',
+        explanation: 'Das f startet den f-String. In {name} und {xp} werden danach die aktuellen Variablenwerte eingesetzt.'
+      },
+      {
+        id: `${lessonId}-fstring-readable-scenario`,
+        type: 'scenario',
+        prompt: 'Du willst "Mina hat 420 XP" ausgeben. Warum ist ein f-String hier die beste erste Wahl?',
+        skillTags,
+        difficulty,
+        options: [
+          { id: 'a', text: 'Der Satz bleibt lesbar und die Variablen stehen direkt an der Stelle, an der sie erscheinen.', isCorrect: true, feedback: 'Richtig. Genau diese Nähe zwischen Satz und eingesetztem Wert macht f-Strings im Alltag so angenehm.' },
+          { id: 'b', text: 'F-Strings verhindern automatisch jeden Tippfehler im Variablennamen.', isCorrect: false, feedback: 'Ein falsch geschriebener Variablenname bleibt ein Fehler. F-Strings machen die Absicht lesbarer, nicht automatisch fehlerfrei.' },
+          { id: 'c', text: 'F-Strings speichern Variablen dauerhaft in einer Datenbank.', isCorrect: false, feedback: 'F-Strings formatieren Textausgaben. Speicherung ist ein eigenes Thema.' }
+        ],
+        explanation: 'F-Strings verbinden lesbaren Text mit eingesetzten Variablenwerten, ohne String-Verkettung unübersichtlich zu machen.'
+      }
+    ]
+  }
+};
 
 function course(
   id: LanguageId,
@@ -705,8 +817,220 @@ function inferSkillTags(courseSeed: CourseSeed, lessonSeed: LessonSeed): SkillTa
   return tags.size > 0 ? [...tags] : ['clean-code'];
 }
 
-function buildLessonExercises(courseSeed: CourseSeed, lessonSeed: LessonSeed, lessonId: string, quiz: QuizQuestion[], fillBlank: FillBlankTask, codingChallenge: ReturnType<typeof buildCodingChallenge>): Exercise[] {
+function buildOptionExercise(input: {
+  id: string;
+  type: Exercise['type'];
+  prompt: string;
+  correct: string;
+  distractors: string[];
+  explanation: string;
+  skillTags: SkillTag[];
+  difficulty: Difficulty;
+  seedHash: number;
+}): Exercise {
+  const options = buildQuizOptions(
+    [
+      { correct: true, text: input.correct },
+      { correct: false, text: input.distractors[0] },
+      { correct: false, text: input.distractors[1] }
+    ],
+    positiveModulo(input.seedHash, 3)
+  );
+
+  return {
+    id: input.id,
+    type: input.type,
+    prompt: input.prompt,
+    skillTags: input.skillTags,
+    difficulty: input.difficulty,
+    options: options.options.map((option) => {
+      const isCorrect = option.id === options.correctOptionId;
+      return {
+        ...option,
+        isCorrect,
+        feedback: isCorrect
+          ? `Richtig. ${input.explanation}`
+          : `Noch nicht. "${option.text}" klingt vielleicht plausibel, führt aber am Lernziel vorbei. ${input.explanation}`
+      };
+    }),
+    explanation: input.explanation
+  };
+}
+
+function patternForToken(token: string) {
+  const escaped = escapeRegExp(token);
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(token) ? new RegExp(`\\b${escaped}\\b`) : new RegExp(escaped);
+}
+
+const tokenDistractorsByLanguage: Record<string, string[]> = {
+  python: ['str', 'input', 'None', 'break', 'continue'],
+  csharp: ['namespace', 'private', 'Task', 'string', 'bool'],
+  java: ['public', 'extends', 'String', 'boolean', 'List'],
+  javascript: ['var', 'querySelectorAll', 'JSON', 'map', 'then'],
+  typescript: ['enum', 'Record', 'never', 'Partial', 'boolean'],
+  tsx: ['props', 'children', 'memo', 'Fragment', 'value'],
+  bash: ['checkout', 'clone', 'restore', 'stash', 'remote'],
+  sql: ['join', 'group', 'having', 'limit', 'constraint'],
+  html: ['div', 'span', 'form', 'header', 'footer'],
+  css: ['block', 'absolute', 'opacity', 'border', 'margin'],
+  json: ['id', 'type', 'enabled', 'metadata', 'timeout']
+};
+
+function buildCodeCompletionExercise(courseSeed: CourseSeed, lessonSeed: LessonSeed, lessonId: string, skillTags: SkillTag[], seedHash: number): Exercise {
+  const candidates = [...(blankTokensByLanguage[courseSeed.codeLanguage] ?? []), ...lessonSeed.code.match(/[A-Za-z_][A-Za-z0-9_]{2,}/g) ?? []];
+  const usedAnswers = new Set<string>();
+  let template = lessonSeed.code;
+  const codeSlots = candidates.reduce<NonNullable<Exercise['codeSlots']>>((slots, token) => {
+    if (slots.length >= 3 || usedAnswers.has(token)) return slots;
+    const pattern = patternForToken(token);
+    if (!pattern.test(template)) return slots;
+
+    const placeholder = `__slot_${slots.length + 1}__`;
+    template = template.replace(pattern, placeholder);
+    usedAnswers.add(token);
+    return [...slots, { id: `slot-${slots.length + 1}`, placeholder, answer: token }];
+  }, []);
+
+  if (codeSlots.length === 0) {
+    codeSlots.push({ id: 'slot-1', placeholder: '__slot_1__', answer: fillFallbackToken(lessonSeed.code) });
+    template = lessonSeed.code.replace(codeSlots[0].answer, codeSlots[0].placeholder);
+  }
+
+  const answers = codeSlots.map((slot) => slot.answer);
+  const distractors = [...(tokenDistractorsByLanguage[courseSeed.codeLanguage] ?? []), ...(blankTokensByLanguage[courseSeed.codeLanguage] ?? [])]
+    .filter((token) => !usedAnswers.has(token))
+    .slice(0, Math.max(2, codeSlots.length));
+  const tokenTexts = rotate([...answers, ...distractors], seedHash).slice(0, answers.length + distractors.length);
+
+  return {
+    id: `${lessonId}-code-completion`,
+    type: 'code_completion',
+    prompt: `Tippe die fehlenden Code-Bausteine für "${lessonSeed.title}" in der richtigen Reihenfolge an.`,
+    skillTags,
+    difficulty: lessonSeed.difficulty ?? 'basic',
+    code: template,
+    codeSlots,
+    tokens: tokenTexts.map((token, index) => ({
+      id: `${lessonId}-token-${index + 1}`,
+      text: token,
+      feedback: answers.includes(token)
+        ? `"${token}" gehört in einen der freien Slots. Achte auf die Reihenfolge im Code.`
+        : `"${token}" ist hier ein Ablenker. Lies den Codefluss, bevor du tippst.`
+    })),
+    expectedAnswer: answers.join('\n'),
+    acceptedAnswers: [answers.join('\n')],
+    solution: lessonSeed.code,
+    explanation: `Die richtige Reihenfolge ist: ${answers.join(' -> ')}. So setzt du die Syntax aus der Lektion aktiv zusammen, statt sie nur wiederzuerkennen.`
+  };
+}
+
+function fillFallbackToken(code: string) {
+  return code.match(/[A-Za-z_][A-Za-z0-9_]{2,}/)?.[0] ?? code.trim().split(/\s+/)[0] ?? '';
+}
+
+function buildSupportExercises(courseSeed: CourseSeed, moduleSeed: ModuleSeed, lessonSeed: LessonSeed, lessonId: string, skillTags: SkillTag[], difficulty: Difficulty, seedHash: number, codingChallenge: ReturnType<typeof buildCodingChallenge>): Exercise[] {
+  return [
+    buildOptionExercise({
+      id: `${lessonId}-true-false`,
+      type: 'true_false',
+      prompt: `Stimmt diese Aussage zu "${lessonSeed.title}"? ${lessonSeed.bestPractice}`,
+      correct: 'Stimmt. Das ist die Praxisregel, die du in eigenen Aufgaben anwenden sollst.',
+      distractors: [
+        'Stimmt nicht. Diese Regel gilt nur in Theoriefragen.',
+        'Stimmt nicht. Der typische Fehler ist immer die bessere Abkürzung.'
+      ],
+      explanation: `${lessonSeed.bestPractice} Diese Regel macht den nächsten Code-Schritt nachvollziehbarer.`,
+      skillTags,
+      difficulty,
+      seedHash
+    }),
+    buildOptionExercise({
+      id: `${lessonId}-code-output`,
+      type: 'code_output',
+      prompt: `Was solltest du beim Codebeispiel zu "${lessonSeed.title}" zuerst vorhersagen können?`,
+      correct: 'Welche Werte entstehen und welcher Schritt das sichtbare Ergebnis erzeugt.',
+      distractors: [
+        'Ob der Code möglichst wenige Zeichen hat.',
+        'Welche Farbe der Editor für die Syntax benutzt.'
+      ],
+      explanation: 'Code lesen heißt: Daten, Regel und Ergebnis erkennen. Erst danach lohnt es sich, Details zu verändern.',
+      skillTags,
+      difficulty,
+      seedHash: seedHash >>> 1
+    }),
+    buildOptionExercise({
+      id: `${lessonId}-debugging`,
+      type: 'debugging',
+      prompt: `Wie gehst du mit dieser typischen Falle um: ${lessonSeed.trap}`,
+      correct: lessonSeed.bestPractice,
+      distractors: [
+        'Den Fehler ignorieren, solange die App nicht sofort abstuerzt.',
+        'Mehr Code schreiben, ohne die Ursache zu isolieren.'
+      ],
+      explanation: `Die Falle ist ein Warnsignal. Die sichere Gegenstrategie ist: ${lessonSeed.bestPractice}`,
+      skillTags: [...new Set<SkillTag>([...skillTags, 'debugging'])],
+      difficulty,
+      seedHash: seedHash >>> 2
+    }),
+    buildOptionExercise({
+      id: `${lessonId}-ordering`,
+      type: 'ordering',
+      prompt: `Welche Reihenfolge hilft dir, "${lessonSeed.title}" wirklich zu üben?`,
+      correct: 'Beispiel lesen -> fehlenden Baustein einsetzen -> eigene kleine Variante schreiben.',
+      distractors: [
+        'Lösung anzeigen -> auswendig lernen -> sofort zur nächsten Lektion springen.',
+        'Editor öffnen -> zufällig Code tippen -> erst danach die Aufgabe lesen.'
+      ],
+      explanation: 'Die Reihenfolge führt von Verstehen zu aktivem Abruf. Genau dadurch bleibt das Konzept länger hängen.',
+      skillTags,
+      difficulty,
+      seedHash: seedHash >>> 3
+    }),
+    buildCodeCompletionExercise(courseSeed, lessonSeed, lessonId, skillTags, seedHash >>> 4),
+    buildOptionExercise({
+      id: `${lessonId}-scenario`,
+      type: 'scenario',
+      prompt: `Du baust ein kleines Feature im Modul "${moduleSeed.title}". Wann setzt du "${lessonSeed.title}" sinnvoll ein?`,
+      correct: lessonSeed.task,
+      distractors: [
+        'Wenn du die Fachregel noch nicht verstanden hast, aber schnell etwas kopieren willst.',
+        'Wenn du den Code absichtlich schwieriger lesbar machen moechtest.'
+      ],
+      explanation: `${lessonSeed.task} Der Transfer in eine konkrete Mini-Aufgabe ist wichtiger als das reine Wiedererkennen von Begriffen.`,
+      skillTags,
+      difficulty,
+      seedHash: seedHash >>> 5
+    }),
+    buildOptionExercise({
+      id: `${lessonId}-mini-project-step`,
+      type: 'mini_project_step',
+      prompt: `Was ist der beste erste Mini-Projekt-Schritt für "${lessonSeed.title}"?`,
+      correct: 'Den kleinsten lauffähigen Fall bauen und danach eine Variante ergänzen.',
+      distractors: [
+        'Sofort alle Sonderfälle gleichzeitig einbauen.',
+        'Erst das Styling perfektionieren, bevor die Logik stimmt.'
+      ],
+      explanation: 'Kleine lauffähige Schritte geben schnelles Feedback und verhindern, dass du mehrere Fehlerquellen gleichzeitig suchst.',
+      skillTags,
+      difficulty,
+      seedHash: seedHash >>> 6
+    }),
+    {
+      id: `${lessonId}-short-answer`,
+      type: 'short_answer',
+      prompt: `Welcher Code-Baustein aus "${lessonSeed.title}" ist für diese Lektion besonders wichtig?`,
+      skillTags,
+      difficulty,
+      expectedAnswer: codingChallenge.requiredConcepts[0]?.label ?? lessonSeed.title,
+      acceptedAnswers: codingChallenge.requiredConcepts.map((concept) => concept.label),
+      explanation: `Wichtig ist, dass du den zentralen Baustein benennen und im Code wiederfinden kannst: ${codingChallenge.requiredConcepts.map((concept) => concept.label).join(', ')}.`
+    }
+  ];
+}
+
+function buildLessonExercises(courseSeed: CourseSeed, moduleSeed: ModuleSeed, lessonSeed: LessonSeed, lessonId: string, quiz: QuizQuestion[], fillBlank: FillBlankTask, codingChallenge: ReturnType<typeof buildCodingChallenge>, seedHash: number, extraExercises: Exercise[] = []): Exercise[] {
   const skillTags = inferSkillTags(courseSeed, lessonSeed);
+  const difficulty = lessonSeed.difficulty ?? 'basic';
   const multipleChoiceExercises: Exercise[] = quiz.map((question) => ({
     id: question.id,
     type: 'multiple_choice',
@@ -734,22 +1058,14 @@ function buildLessonExercises(courseSeed: CourseSeed, lessonSeed: LessonSeed, le
       type: 'fill_blank',
       prompt: fillBlank.instruction,
       skillTags,
-      difficulty: lessonSeed.difficulty ?? 'basic',
+      difficulty,
       expectedAnswer: fillBlank.answer,
       acceptedAnswers: [fillBlank.answer],
       code: fillBlank.code,
       explanation: `Die richtige Ergänzung ist "${fillBlank.answer}". ${fillBlank.hint}`
     },
-    {
-      id: `${lessonId}-code-completion`,
-      type: 'code_completion',
-      prompt: codingChallenge.prompt,
-      skillTags,
-      difficulty: lessonSeed.difficulty ?? 'basic',
-      code: codingChallenge.starterCode,
-      solution: codingChallenge.solution,
-      explanation: `Diese Codeaufgabe prüft, ob du die Kernbausteine der Lektion selbst zusammensetzen kannst: ${codingChallenge.requiredConcepts.map((concept) => concept.label).join(', ')}.`
-    }
+    ...buildSupportExercises(courseSeed, moduleSeed, lessonSeed, lessonId, skillTags, difficulty, seedHash, codingChallenge),
+    ...extraExercises
   ];
 }
 
@@ -762,27 +1078,45 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
     lessons: moduleSeed.lessons.map((lessonSeed, lessonIndex): Lesson => {
       const slug = lessonSeed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const id = `${courseSeed.id}-${slug || `lesson-${lessonIndex + 1}`}`;
+      const enhancement = lessonEnhancements[id];
+      const enhancedLessonSeed: LessonSeed = {
+        ...lessonSeed,
+        title: enhancement?.title ?? lessonSeed.title,
+        theory: enhancement?.theory ?? lessonSeed.theory,
+        code: enhancement?.code ?? lessonSeed.code,
+        task: enhancement?.task ?? lessonSeed.task,
+        bestPractice: enhancement?.bestPractice ?? lessonSeed.bestPractice,
+        trap: enhancement?.trap ?? lessonSeed.trap,
+        difficulty: enhancement?.difficulty ?? lessonSeed.difficulty
+      };
       const seedHash = hashString(id);
-      const fillBlank = buildFillBlank(courseSeed.codeLanguage, lessonSeed.code, lessonSeed.title);
-      const quiz = buildLessonQuizQuestions(courseSeed, moduleSeed, lessonSeed, id, lessonIndex, seedHash);
-      const codingChallenge = buildCodingChallenge(courseSeed, lessonSeed);
+      const fillBlank = buildFillBlank(courseSeed.codeLanguage, enhancedLessonSeed.code, enhancedLessonSeed.title);
+      const quiz = buildLessonQuizQuestions(courseSeed, moduleSeed, enhancedLessonSeed, id, lessonIndex, seedHash);
+      const codingChallenge = buildCodingChallenge(courseSeed, enhancedLessonSeed);
+      const skillTags = inferSkillTags(courseSeed, enhancedLessonSeed);
+      const extraExercises = enhancement?.extraExercises?.({
+        lessonId: id,
+        skillTags,
+        difficulty: enhancedLessonSeed.difficulty ?? 'basic'
+      }) ?? [];
       return {
         id,
-        title: lessonSeed.title,
-        estimatedMinutes: 6 + lessonIndex * 2,
-        xp: 35 + lessonIndex * 5,
-        theory: lessonSeed.theory,
-        knowledge: buildKnowledgePoints(courseSeed, moduleSeed, lessonSeed),
-        codeExample: { language: courseSeed.codeLanguage, code: lessonSeed.code },
+        title: enhancedLessonSeed.title,
+        estimatedMinutes: enhancement ? 18 + lessonIndex * 3 : 12 + lessonIndex * 2,
+        xp: enhancement ? 55 + lessonIndex * 5 : 40 + lessonIndex * 5,
+        theory: enhancedLessonSeed.theory,
+        knowledge: enhancement?.knowledge ?? buildKnowledgePoints(courseSeed, moduleSeed, enhancedLessonSeed),
+        codeExample: { language: courseSeed.codeLanguage, code: enhancedLessonSeed.code },
         fillBlank,
         quiz,
-        exercises: buildLessonExercises(courseSeed, lessonSeed, id, quiz, fillBlank, codingChallenge),
+        exercises: buildLessonExercises(courseSeed, moduleSeed, enhancedLessonSeed, id, quiz, fillBlank, codingChallenge, seedHash, extraExercises),
         practice: {
-          prompt: lessonSeed.task,
+          prompt: enhancedLessonSeed.task,
           checklist: ['Benenne Daten und Verhalten klar.', 'Implementiere zuerst den normalen Fall.', 'Füge ein kleines Beispiel hinzu, das die Lösung beweist.'],
-          hint: lessonSeed.bestPractice
+          hint: enhancedLessonSeed.bestPractice
         },
-        codingChallenge
+        codingChallenge,
+        sourceReferences: enhancement?.sourceReferences
       };
     })
   }))
