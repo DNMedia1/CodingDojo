@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
+import { Code2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { courses } from '../data/courses';
 import { projects } from '../data/projects';
 import type { Difficulty, LanguageId } from '../models/learning';
+
+const ProjectIde = lazy(() => import('../components/ProjectIde').then((module) => ({ default: module.ProjectIde })));
 
 const difficultyLabels: Record<Difficulty, string> = {
   basic: 'Basis',
@@ -19,12 +22,14 @@ const difficultyTones: Record<Difficulty, string> = {
 export function ProjectsPage() {
   const [courseFilter, setCourseFilter] = useState<LanguageId | 'all'>('all');
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | 'all'>('all');
+  const [activeProjectId, setActiveProjectId] = useState<string>('');
   const projectCourses = courses.filter((course) => projects.some((project) => project.courseId === course.id));
   const visibleProjects = projects.filter(
     (project) =>
       (courseFilter === 'all' || project.courseId === courseFilter) &&
       (difficultyFilter === 'all' || project.difficulty === difficultyFilter)
   );
+  const activeProject = visibleProjects.find((project) => project.id === activeProjectId);
 
   return (
     <div>
@@ -46,9 +51,16 @@ export function ProjectsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {activeProject ? (
+        <Suspense fallback={<div className="rounded-3xl border border-white/10 bg-panel p-5 text-sm font-bold text-muted">IDE wird geladen...</div>}>
+          <ProjectIde project={activeProject} />
+        </Suspense>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {visibleProjects.map((project) => {
           const course = courses.find((item) => item.id === project.courseId)!;
+          const isIdeOpen = activeProjectId === project.id;
           return (
             <article key={project.id} className="rounded-3xl border border-white/10 bg-panel p-5">
               <div className="flex items-start justify-between gap-3">
@@ -61,7 +73,19 @@ export function ProjectsPage() {
                     <h2 className="mt-1 break-words text-xl font-black">{project.title}</h2>
                   </div>
                 </div>
-                <span className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-muted">{project.duration}</span>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-muted">{project.duration}</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveProjectId(isIdeOpen ? '' : project.id)}
+                    className={`inline-flex min-h-10 items-center gap-2 rounded-2xl border px-3 text-xs font-black transition ${
+                      isIdeOpen ? 'border-sky-300/50 bg-sky-300/15 text-sky-100' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                    }`}
+                  >
+                    <Code2 size={16} />
+                    {isIdeOpen ? 'IDE schließen' : 'IDE öffnen'}
+                  </button>
+                </div>
               </div>
               <span className={`mt-3 inline-block rounded-full border px-3 py-1 text-xs font-black ${difficultyTones[project.difficulty]}`}>
                 {difficultyLabels[project.difficulty]}

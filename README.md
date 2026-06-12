@@ -53,6 +53,7 @@ Version 1 läuft komplett lokal, fühlt sich auf dem Smartphone wie eine App an 
 - Badges für Lektionen, Streaks, Level, Quizleistung und Kursabschlüsse
 - motivierender Erfolgsbildschirm nach jeder Lektion mit XP, Level-Fortschritt, neuen Badges und Sprung zur nächsten Lektion
 - Praxisprojekte mit Anforderungen, Hinweisen und Lösungsnotizen
+- integrierte Projekt-IDE mit CodeMirror, lokal gespeicherten Projektdateien und sprachspezifischem Autocomplete
 - Profil mit Badge-Übersicht, Fortschritt und Einstellungen
 - Dark Mode als Standard mit optionalem Light Mode
 - PWA-Grundstruktur
@@ -64,6 +65,8 @@ Kursinhalte liegen in `src/data/courses.ts` und nutzen die Domain-Modelle aus `s
 Die Code-Schreibaufgaben werden aus den Kursdaten erzeugt und in `src/services/codeFeedbackService.ts` lokal geprüft. Die Prüfung ersetzt keine echte Sandbox, gibt aber sofort Hilfe bei offenen Klammern, fehlenden Strings und wichtigen Konzepten wie `return`, `fetch`, `useState`, `git status`, `select`, `z.object`, semantischem HTML oder Automation-Feldern wie `trigger` und `steps`.
 
 Die App-Shell in `src/components/AppShell.tsx` rendert auf dem Handy eine Bottom Navigation und ab Laptop-Breite eine feste Sidebar; die Lektionsseite ergänzt auf dem Desktop eine eigene Step-Sidebar. UI-Erklärungen und Lerninhalte bleiben auf Deutsch, Code und Bezeichner auf Englisch.
+
+Die Projekt-IDE liegt in `src/components/ProjectIde.tsx` und wird auf der Projektseite lazy geladen. `src/services/projectIdeService.ts` ordnet jedem Praxisprojekt eine passende Sprache, Starterdatei und begrenzte Autocomplete-Liste zu, damit etwa SQL-Projekte SQL-Vorschläge bekommen und React-Projekte React/TSX-Vorschläge.
 
 Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring, Code-Feedback und Fortschrittsregeln liegen in Services.
 
