@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { ScrollToTop } from './components/ScrollToTop';
+import { BossFightPage } from './pages/BossFightPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
 import { CoursesPage } from './pages/CoursesPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -22,6 +23,7 @@ export function App() {
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
         <Route path="/courses/:courseId/modules/:moduleId" element={<ModulePage />} />
+        <Route path="/courses/:courseId/modules/:moduleId/boss-fight" element={<BossFightPage />} />
         <Route path="/lessons/:lessonId" element={<LessonPage />} />
         <Route path="/mistakes" element={<MistakesPage />} />
         <Route path="/quiz" element={<QuizPage />} />

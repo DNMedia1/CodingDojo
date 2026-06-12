@@ -12,6 +12,7 @@ const emptyProgress: UserProgress = {
   quizCorrectTotal: 0,
   lastActiveDate: '2026-06-11',
   completedLessons: {},
+  completedBossFights: [],
   quizMistakes: [],
   dailyGoal: 2,
   daily: { date: '2026-06-11', lessonsCompleted: 0, quizCorrect: 0, xpEarned: 0, bonusAwarded: false },

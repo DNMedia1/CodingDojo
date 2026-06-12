@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAILY_BONUS_XP, calculateLevel, completeLesson, getDailyQuests, gradeQuiz } from './progressService';
+import { DAILY_BONUS_XP, calculateLevel, completeBossFight, completeLesson, getDailyQuests, gradeQuiz } from './progressService';
 import type { UserProgress } from '../models/learning';
 
 const baseProgress: UserProgress = {
@@ -11,6 +11,7 @@ const baseProgress: UserProgress = {
   quizCorrectTotal: 0,
   lastActiveDate: '2026-06-10',
   completedLessons: {},
+  completedBossFights: [],
   quizMistakes: [],
   dailyGoal: 2,
   daily: { date: '2026-06-10', lessonsCompleted: 1, quizCorrect: 2, xpEarned: 47, bonusAwarded: false },
@@ -82,5 +83,17 @@ describe('progressService', () => {
 
     expect(quests).toHaveLength(3);
     expect(quests.every((quest) => quest.current === 0 && !quest.done)).toBe(true);
+  });
+
+  it('awards boss-fight XP once without counting it as a lesson', () => {
+    const first = completeBossFight(baseProgress, 'python-module-1-boss-fight', 90, '2026-06-11');
+    const second = completeBossFight(first, 'python-module-1-boss-fight', 90, '2026-06-11');
+
+    expect(first.xp).toBe(baseProgress.xp + 90);
+    expect(first.completedBossFights).toContain('python-module-1-boss-fight');
+    expect(first.daily.lessonsCompleted).toBe(0);
+    expect(first.daily.xpEarned).toBe(90);
+    expect(second.xp).toBe(first.xp);
+    expect(second.completedBossFights).toHaveLength(1);
   });
 });

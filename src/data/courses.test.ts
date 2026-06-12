@@ -120,6 +120,20 @@ describe('course content', () => {
     expect(pythonVariables?.exercises.some((exercise) => exercise.prompt.includes(':.2f'))).toBe(true);
   });
 
+  it('generates a boss fight for every module with combined skills', () => {
+    for (const course of courses) {
+      for (const module of course.modules) {
+        expect(module.bossFight.id).toBe(`${module.id}-boss-fight`);
+        expect(module.bossFight.exercises.length).toBeGreaterThanOrEqual(3);
+        expect(new Set(module.bossFight.skillTags).size).toBeGreaterThanOrEqual(2);
+        expect(module.bossFight.xp).toBeGreaterThanOrEqual(80);
+        expect(module.bossFight.exercises.map((exercise) => exercise.type)).toEqual(
+          expect.arrayContaining(['multiple_choice', 'debugging', 'mini_project_step'])
+        );
+      }
+    }
+  });
+
   it('builds three-option quiz questions with varied correct positions', () => {
     const allQuestions = courses.flatMap((course) =>
       course.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.quiz))

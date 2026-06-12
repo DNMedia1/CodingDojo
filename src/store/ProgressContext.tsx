@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { LanguageId, QuizAnswer, ThemeMode, UserProgress } from '../models/learning';
 import { localProgressRepository } from '../services/progressRepository';
-import { calculateLevel, completeLesson, defaultProgress, gradeQuiz } from '../services/progressService';
+import { calculateLevel, completeBossFight as computeBossFightCompletion, completeLesson, defaultProgress, gradeQuiz } from '../services/progressService';
 
 type ProgressContextValue = {
   progress: UserProgress;
   levelInfo: ReturnType<typeof calculateLevel>;
   complete: (courseId: LanguageId, lessonId: string, xp: number) => void;
+  completeBossFight: (bossFightId: string, xp: number) => void;
   submitQuiz: (answers: QuizAnswer[]) => ReturnType<typeof gradeQuiz>;
   updateProfile: (displayName: string, dailyGoal: number) => void;
   setTheme: (theme: ThemeMode) => void;
@@ -28,6 +29,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       progress,
       levelInfo: calculateLevel(progress.xp),
       complete: (courseId, lessonId, xp) => setProgress((current) => completeLesson(current, courseId, lessonId, xp)),
+      completeBossFight: (bossFightId, xp) => setProgress((current) => computeBossFightCompletion(current, bossFightId, xp)),
       submitQuiz: (answers) => {
         let result: ReturnType<typeof gradeQuiz> | null = null;
         setProgress((current) => {

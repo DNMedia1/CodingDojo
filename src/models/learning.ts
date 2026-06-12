@@ -172,11 +172,21 @@ export interface Lesson {
   sourceReferences?: ContentSource[];
 }
 
+export interface BossFight {
+  id: string;
+  title: string;
+  description: string;
+  skillTags: SkillTag[];
+  exercises: Exercise[];
+  xp: number;
+}
+
 export interface CourseModule {
   id: string;
   title: string;
   description: string;
   lessons: Lesson[];
+  bossFight: BossFight;
 }
 
 export interface Course {
@@ -219,6 +229,7 @@ export interface UserProgress {
   quizCorrectTotal: number;
   lastActiveDate: string;
   completedLessons: Partial<Record<LanguageId, string[]>>;
+  completedBossFights: string[];
   quizMistakes: string[];
   dailyGoal: number;
   daily: DailyActivity;

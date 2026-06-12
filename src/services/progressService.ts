@@ -21,6 +21,7 @@ export const defaultProgress: UserProgress = {
   quizCorrectTotal: 0,
   lastActiveDate: todayIso(),
   completedLessons: {},
+  completedBossFights: [],
   quizMistakes: [],
   dailyGoal: 2,
   daily: emptyDaily(todayIso()),
@@ -73,6 +74,24 @@ export function completeLesson(
   });
 }
 
+export function completeBossFight(progress: UserProgress, bossFightId: string, xp: number, date = todayIso()): UserProgress {
+  const completedBossFights = progress.completedBossFights ?? [];
+  if (completedBossFights.includes(bossFightId)) {
+    return progress;
+  }
+
+  const active = withActivityDate(progress, date);
+  return applyDailyBonus({
+    ...active,
+    xp: active.xp + xp,
+    completedBossFights: [...completedBossFights, bossFightId],
+    daily: {
+      ...active.daily,
+      xpEarned: active.daily.xpEarned + xp
+    }
+  });
+}
+
 export function gradeQuiz(answers: QuizAnswer[], progress: UserProgress, date = todayIso()) {
   const missed = answers.filter((answer) => answer.selectedOptionId !== answer.correctOptionId).map((answer) => answer.questionId);
   const score = answers.length - missed.length;
@@ -113,6 +132,7 @@ export function loadProgress(): UserProgress {
       ...stored,
       bestStreak: Math.max(stored.bestStreak ?? 1, stored.streak),
       quizCorrectTotal: stored.quizCorrectTotal ?? 0,
+      completedBossFights: stored.completedBossFights ?? [],
       daily: daily.date === today ? daily : emptyDaily(today)
     };
     return normalized.displayName === 'Developer' ? { ...normalized, displayName: 'Entwickler' } : normalized;

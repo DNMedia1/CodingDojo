@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock } from 'lucide-react';
+import { CheckCircle2, Clock, Trophy } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { getCourse } from '../data/courses';
@@ -35,6 +35,24 @@ export function ModulePage() {
           );
         })}
       </div>
+
+      <Link to={`/courses/${course.id}/modules/${module.id}/boss-fight`} className="mt-4 block rounded-3xl border border-yellow-300/30 bg-yellow-300/10 p-5 transition hover:-translate-y-0.5 hover:border-yellow-200/50">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-extrabold text-yellow-100">Abschluss-Challenge</p>
+            <h2 className="mt-1 text-xl font-black">Boss-Fight: {module.bossFight.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">{module.bossFight.description}</p>
+          </div>
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-yellow-300/20 text-yellow-100">
+            <Trophy size={22} />
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.12em] text-muted">
+          <span>{module.bossFight.exercises.length} Aufgaben</span>
+          <span>{module.bossFight.xp} XP</span>
+          <span>{module.bossFight.skillTags.slice(0, 3).join(', ')}</span>
+        </div>
+      </Link>
     </div>
   );
 }

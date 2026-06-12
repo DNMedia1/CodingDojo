@@ -48,6 +48,7 @@ Version 1 läuft komplett lokal, fühlt sich auf dem Smartphone wie eine App an 
 - jede Lektion enthält Theorie, vier Wissenspunkte, Codebeispiel, Lückentext-Aufgabe, vier Multiple-Choice-Fragen, eine Schreibaufgabe und eine Praxisaufgabe
 - Lesson-Navigation mit Schrittleiste auf dem Handy und Step-Sidebar auf dem Desktop
 - Code-Schreibmodus mit lokalem Feedback: Syntaxhinweise, Konzeptchecks und Fortschrittswert für fast richtige Lösungen
+- Modul-Boss-Fights als Abschluss-Challenges mit kombinierten Skills und eigenem XP-Abschluss
 - Quizmodus mit Schwierigkeitsfiltern und Wiederholung falscher Fragen
 - XP, Level, Streak und Kursfortschritt
 - Tagesziele als Daily Quests mit einmaligem Bonus-XP pro Tag
@@ -72,6 +73,8 @@ Die Kurskarten und Kursdetailseiten zeigen KI-generierte Coverbilder aus `public
 Die Projekt-IDE liegt in `src/components/ProjectIde.tsx` und wird auf der Projektseite lazy geladen. `src/services/projectIdeService.ts` ordnet jedem Praxisprojekt eine passende Sprache, Starterdatei und begrenzte Autocomplete-Liste zu, damit etwa SQL-Projekte SQL-Vorschläge bekommen und React-Projekte React/TSX-Vorschläge.
 
 Die Heute-Lernen-Empfehlung liegt in `src/services/recommendationService.ts`. Sie priorisiert fällige Wiederholungen aus dem lokalen Review-Plan, findet die nächste offene Lektion und wählt eine kleine Code-Challenge aus den Exercise-Daten. Dadurch bleibt die Dashboard-Logik testbar und kann später durch serverseitige Personalisierung ersetzt werden.
+
+Boss-Fights werden pro Modul aus vorhandenen Exercise-Daten generiert und kombinieren Konzeptfrage, Debugging und Mini-Projekt-Schritt. Der Abschluss wird über `completedBossFights` getrennt vom normalen Lektionsfortschritt gespeichert, damit Kursprozente nicht verfälscht werden.
 
 Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring, Code-Feedback, Empfehlungen und Fortschrittsregeln liegen in Services.
 

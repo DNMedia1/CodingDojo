@@ -712,7 +712,7 @@ git commit -m "feat: add today learning dashboard"
 - Create: `src/pages/BossFightPage.tsx`
 - Modify: `src/App.tsx`
 
-- [ ] **Step 1: Boss-Fight model ergänzen**
+- [x] **Step 1: Boss-Fight model ergänzen**
 
 ```ts
 export interface BossFight {
@@ -731,7 +731,7 @@ Add to `CourseModule`:
 bossFight: BossFight;
 ```
 
-- [ ] **Step 2: Test schreiben**
+- [x] **Step 2: Test schreiben**
 
 ```ts
 it('generates a boss fight for every module with combined skills', () => {
@@ -744,7 +744,7 @@ it('generates a boss fight for every module with combined skills', () => {
 });
 ```
 
-- [ ] **Step 3: Generator implementieren**
+- [x] **Step 3: Generator implementieren**
 
 Boss-Fight nimmt pro Modul:
 - eine Konzeptfrage
@@ -753,7 +753,7 @@ Boss-Fight nimmt pro Modul:
 
 SkillTags werden aus den Modul-Lektionen zusammengeführt.
 
-- [ ] **Step 4: ModulePage Card ergänzen**
+- [x] **Step 4: ModulePage Card ergänzen**
 
 Show after lesson cards:
 
@@ -764,11 +764,11 @@ Show after lesson cards:
 </Link>
 ```
 
-- [ ] **Step 5: BossFightPage mit ExerciseRenderer bauen**
+- [x] **Step 5: BossFightPage mit ExerciseRenderer bauen**
 
 Reuse `ExerciseRenderer`, record results in `LearningActivityContext`, award XP only when all exercises answered.
 
-- [ ] **Step 6: Checks und Commit**
+- [x] **Step 6: Checks und Commit**
 
 ```bash
 npm test

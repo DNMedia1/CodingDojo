@@ -1,4 +1,4 @@
-import type { CodingConceptCheck, ContentSource, Course, CourseModule, Difficulty, Exercise, FillBlankTask, LanguageId, Lesson, QuizOption, QuizQuestion, SkillTag } from '../models/learning';
+import type { BossFight, CodingConceptCheck, ContentSource, Course, CourseModule, Difficulty, Exercise, FillBlankTask, LanguageId, Lesson, QuizOption, QuizQuestion, SkillTag } from '../models/learning';
 
 type LessonSeed = {
   title: string;
@@ -1069,13 +1069,46 @@ function buildLessonExercises(courseSeed: CourseSeed, moduleSeed: ModuleSeed, le
   ];
 }
 
+function buildModuleBossFight(moduleId: string, moduleSeed: ModuleSeed, lessons: Lesson[]): BossFight {
+  const bossFightId = `${moduleId}-boss-fight`;
+  const moduleExercises = lessons.flatMap((lesson) => lesson.exercises);
+  const selectedExercises = [
+    findExercise(moduleExercises, 'multiple_choice'),
+    findExercise(moduleExercises, 'debugging'),
+    findExercise(moduleExercises, 'mini_project_step')
+  ].filter(Boolean);
+  const skillTags = ensureSkillDiversity(selectedExercises.flatMap((exercise) => exercise.skillTags));
+
+  return {
+    id: bossFightId,
+    title: `${moduleSeed.title} meistern`,
+    description: `Kombiniere zentrale Skills aus "${moduleSeed.title}" in einer Abschluss-Challenge.`,
+    skillTags,
+    exercises: selectedExercises.map((exercise, index) => ({
+      ...exercise,
+      id: `${bossFightId}-exercise-${index + 1}`,
+      prompt: `Boss-Fight ${index + 1}: ${exercise.prompt}`,
+      skillTags: ensureSkillDiversity(exercise.skillTags)
+    })),
+    xp: 90
+  };
+}
+
+function findExercise(exercises: Exercise[], type: Exercise['type']): Exercise {
+  return exercises.find((exercise) => exercise.type === type) ?? exercises[0];
+}
+
+function ensureSkillDiversity(tags: SkillTag[]): SkillTag[] {
+  const unique = [...new Set(tags)];
+  if (unique.length >= 2) return unique;
+  return [...new Set<SkillTag>([...unique, 'debugging', 'clean-code'])];
+}
+
 export const courses: Course[] = courseSeeds.map((courseSeed) => ({
   ...courseSeed,
-  modules: courseSeed.modules.map((moduleSeed, moduleIndex): CourseModule => ({
-    id: `${courseSeed.id}-module-${moduleIndex + 1}`,
-    title: moduleSeed.title,
-    description: moduleSeed.description,
-    lessons: moduleSeed.lessons.map((lessonSeed, lessonIndex): Lesson => {
+  modules: courseSeed.modules.map((moduleSeed, moduleIndex): CourseModule => {
+    const moduleId = `${courseSeed.id}-module-${moduleIndex + 1}`;
+    const lessons = moduleSeed.lessons.map((lessonSeed, lessonIndex): Lesson => {
       const slug = lessonSeed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const id = `${courseSeed.id}-${slug || `lesson-${lessonIndex + 1}`}`;
       const enhancement = lessonEnhancements[id];
@@ -1118,8 +1151,16 @@ export const courses: Course[] = courseSeeds.map((courseSeed) => ({
         codingChallenge,
         sourceReferences: enhancement?.sourceReferences
       };
-    })
-  }))
+    });
+
+    return {
+      id: moduleId,
+      title: moduleSeed.title,
+      description: moduleSeed.description,
+      lessons,
+      bossFight: buildModuleBossFight(moduleId, moduleSeed, lessons)
+    };
+  })
 }));
 
 export const getCourse = (courseId: string) => courses.find((courseItem) => courseItem.id === courseId);
