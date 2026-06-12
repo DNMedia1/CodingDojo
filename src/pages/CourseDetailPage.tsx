@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { CourseArt } from '../components/CourseArt';
 import { Header } from '../components/Header';
 import { ProgressBar } from '../components/ProgressBar';
 import { getCourse } from '../data/courses';
@@ -16,16 +17,19 @@ export function CourseDetailPage() {
   return (
     <div>
       <Header title={course.title} subtitle={course.description} />
-      <section className={`rounded-3xl bg-gradient-to-br ${course.gradient} p-5 text-ink shadow-glow`}>
-        <div className="flex items-center justify-between">
-          <div className="text-5xl font-black">{course.icon}</div>
-          <div className="text-right">
-            <p className="text-3xl font-black">{stats.percent}%</p>
-            <p className="text-sm font-bold">abgeschlossen</p>
+      <section className="overflow-hidden rounded-3xl border border-white/10 shadow-glow">
+        <CourseArt course={course} className="h-36 sm:h-44" />
+        <div className={`bg-gradient-to-br ${course.gradient} p-5 text-ink`}>
+          <div className="flex items-center justify-between">
+            <div className="text-5xl font-black">{course.icon}</div>
+            <div className="text-right">
+              <p className="text-3xl font-black">{stats.percent}%</p>
+              <p className="text-sm font-bold">abgeschlossen</p>
+            </div>
           </div>
-        </div>
-        <div className="mt-5 rounded-full bg-ink/20 p-1">
-          <ProgressBar value={stats.percent} accent="#0b0f14" />
+          <div className="mt-5 rounded-full bg-ink/20 p-1">
+            <ProgressBar value={stats.percent} accent="#0b0f14" />
+          </div>
         </div>
       </section>
 

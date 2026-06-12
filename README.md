@@ -66,6 +66,8 @@ Die Code-Schreibaufgaben werden aus den Kursdaten erzeugt und in `src/services/c
 
 Die App-Shell in `src/components/AppShell.tsx` rendert auf dem Handy eine Bottom Navigation und ab Laptop-Breite eine feste Sidebar; die Lektionsseite ergänzt auf dem Desktop eine eigene Step-Sidebar. UI-Erklärungen und Lerninhalte bleiben auf Deutsch, Code und Bezeichner auf Englisch.
 
+Die Kurskarten und Kursdetailseiten zeigen KI-generierte Coverbilder aus `public/course-art/`. Die Dateien folgen dem Schema `<courseId>.jpg` (zum Beispiel `python.jpg`); ein neues Bild einfach unter diesem Namen ablegen, fertig. Fehlt ein Bild, rendert `src/components/CourseArt.tsx` automatisch einen Gradient-Fallback im Kursfarbschema.
+
 Die Projekt-IDE liegt in `src/components/ProjectIde.tsx` und wird auf der Projektseite lazy geladen. `src/services/projectIdeService.ts` ordnet jedem Praxisprojekt eine passende Sprache, Starterdatei und begrenzte Autocomplete-Liste zu, damit etwa SQL-Projekte SQL-Vorschläge bekommen und React-Projekte React/TSX-Vorschläge.
 
 Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring, Code-Feedback und Fortschrittsregeln liegen in Services.

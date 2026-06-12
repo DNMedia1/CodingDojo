@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Course } from '../models/learning';
 import { useProgress } from '../store/ProgressContext';
 import { getCourseProgress } from '../utils/learning';
+import { CourseArt } from './CourseArt';
 import { ProgressBar } from './ProgressBar';
 
 export function CourseCard({ course }: { course: Course }) {
@@ -11,8 +12,9 @@ export function CourseCard({ course }: { course: Course }) {
 
   return (
     <Link to={`/courses/${course.id}`} className="block rounded-2xl border border-white/10 bg-panel/90 p-4 shadow-glow transition hover:-translate-y-0.5 hover:border-white/20">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${course.gradient} text-sm font-black text-ink`}>
+      <CourseArt course={course} className="mb-4 h-24 rounded-xl border border-white/10" />
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${course.gradient} text-xs font-black text-ink`}>
           {course.icon}
         </div>
         <ArrowRight className="text-muted" size={18} />
