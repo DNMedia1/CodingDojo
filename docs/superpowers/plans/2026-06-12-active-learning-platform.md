@@ -658,7 +658,7 @@ git commit -m "feat: add mistakes review page"
 - Create: `src/components/TodayLearningCard.tsx`
 - Modify: `src/pages/DashboardPage.tsx`
 
-- [ ] **Step 1: Recommendation tests schreiben**
+- [x] **Step 1: Recommendation tests schreiben**
 
 ```ts
 it('prefers due reviews before the next lesson', () => {
@@ -673,7 +673,7 @@ it('prefers due reviews before the next lesson', () => {
 });
 ```
 
-- [ ] **Step 2: Recommendation service implementieren**
+- [x] **Step 2: Recommendation service implementieren**
 
 Return shape:
 
@@ -687,11 +687,11 @@ export interface TodayLearningRecommendation {
 }
 ```
 
-- [ ] **Step 3: Dashboard-Karte einbauen**
+- [x] **Step 3: Dashboard-Karte einbauen**
 
 Add `TodayLearningCard` above existing Weiterlernen card. Keep existing card visible; do not replace it yet.
 
-- [ ] **Step 4: Checks und Commit**
+- [x] **Step 4: Checks und Commit**
 
 ```bash
 npm test

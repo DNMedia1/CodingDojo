@@ -39,6 +39,7 @@ npm run preview
 Version 1 läuft komplett lokal, fühlt sich auf dem Smartphone wie eine App an und skaliert responsiv bis zum Desktop:
 
 - Dashboard mit Weiterlernen-Karte und Tageszielen
+- Heute-Lernen-Karte mit fälligen Wiederholungen, empfohlener nächster Lektion, Mini-Code-Challenge und Tagesziel-Fortschritt
 - responsive App-Shell: Bottom Navigation auf dem Handy, Sidebar auf Laptop und Desktop
 - zwölf Kurs-Tracks: Python, C#, Java, HTML, CSS, JavaScript, TypeScript, React, Git & GitHub, SQL, Backend APIs und AI Automation
 - Python als vertiefter Track mit 39 Lektionen über Grundlagen, Collections, Dateien, moderne Sprache, APIs, Daten, Testing und Automatisierung
@@ -70,7 +71,9 @@ Die Kurskarten und Kursdetailseiten zeigen KI-generierte Coverbilder aus `public
 
 Die Projekt-IDE liegt in `src/components/ProjectIde.tsx` und wird auf der Projektseite lazy geladen. `src/services/projectIdeService.ts` ordnet jedem Praxisprojekt eine passende Sprache, Starterdatei und begrenzte Autocomplete-Liste zu, damit etwa SQL-Projekte SQL-Vorschläge bekommen und React-Projekte React/TSX-Vorschläge.
 
-Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring, Code-Feedback und Fortschrittsregeln liegen in Services.
+Die Heute-Lernen-Empfehlung liegt in `src/services/recommendationService.ts`. Sie priorisiert fällige Wiederholungen aus dem lokalen Review-Plan, findet die nächste offene Lektion und wählt eine kleine Code-Challenge aus den Exercise-Daten. Dadurch bleibt die Dashboard-Logik testbar und kann später durch serverseitige Personalisierung ersetzt werden.
+
+Die Struktur ist so vorbereitet, dass später ein Backend die lokalen Datenservices ersetzen kann. Seitenkomponenten bleiben für Darstellung und Interaktion zuständig; Persistenz, Scoring, Code-Feedback, Empfehlungen und Fortschrittsregeln liegen in Services.
 
 ## Backend-Roadmap
 

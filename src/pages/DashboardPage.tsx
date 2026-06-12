@@ -5,26 +5,33 @@ import { CourseCard } from '../components/CourseCard';
 import { Header } from '../components/Header';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatTile } from '../components/StatTile';
+import { TodayLearningCard } from '../components/TodayLearningCard';
 import { DAILY_BONUS_XP, getDailyQuests } from '../services/progressService';
+import { getTodayLearningRecommendation } from '../services/recommendationService';
+import { useLearningActivity } from '../store/LearningActivityContext';
 import { useProgress } from '../store/ProgressContext';
 import { getCourseProgress, getOverallProgress } from '../utils/learning';
 
 export function DashboardPage() {
   const { progress, levelInfo } = useProgress();
+  const { dueReviews } = useLearningActivity();
   const overall = getOverallProgress(progress);
   const quests = getDailyQuests(progress);
   const questsDone = quests.filter((quest) => quest.done).length;
   const activeCourse = courses.find((course) => getCourseProgress(course, progress).percent < 100) ?? courses[0];
   const activeModule = activeCourse.modules[0];
   const activeLesson = activeModule.lessons.find((lesson) => !(progress.completedLessons[activeCourse.id] ?? []).includes(lesson.id)) ?? activeModule.lessons[0];
+  const recommendation = getTodayLearningRecommendation({ courses, progress, dueReviews });
 
   return (
     <div>
       <Header title={`Hi ${progress.displayName}`} subtitle="Baue echte Entwicklerpraxis in kurzen täglichen Sessions auf." />
 
+      <TodayLearningCard recommendation={recommendation} />
+
       <div className="lg:grid lg:grid-cols-[1.15fr_1fr] lg:items-start lg:gap-4">
         <div>
-      <section className="rounded-3xl border border-white/10 bg-panel p-5 shadow-glow">
+      <section className="mt-4 rounded-3xl border border-white/10 bg-panel p-5 shadow-glow">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-muted">Weiterlernen</p>
