@@ -10,7 +10,7 @@ import { getNewlyEarnedBadges } from '../services/badgeService';
 import { evaluateCode, type CodeFeedback } from '../services/codeFeedbackService';
 import { calculateLevel, completeLesson as computeLessonCompletion, getDailyQuests } from '../services/progressService';
 import { useProgress } from '../store/ProgressContext';
-import { isFillBlankAnswerCorrect, isLessonCompleted } from '../utils/learning';
+import { formatDayCount, isFillBlankAnswerCorrect, isLessonCompleted } from '../utils/learning';
 
 type FinishResult = {
   xpGained: number;
@@ -429,7 +429,7 @@ export function LessonPage() {
             <div className="mt-5">
               <div className="flex items-center justify-between text-xs font-bold text-muted">
                 <span>Level {finishResult.level}</span>
-                <span className="inline-flex items-center gap-1"><Flame size={14} className="text-orange-300" /> {finishResult.streak} Tage Streak</span>
+                <span className="inline-flex items-center gap-1"><Flame size={14} className="text-orange-300" /> {formatDayCount(finishResult.streak)} Streak</span>
               </div>
               <div className="mt-2"><ProgressBar value={finishResult.levelProgress} accent="#86efac" /></div>
             </div>

@@ -6,7 +6,7 @@ import { StatTile } from '../components/StatTile';
 import { courses } from '../data/courses';
 import { getBadgeStates } from '../services/badgeService';
 import { useProgress } from '../store/ProgressContext';
-import { getCourseProgress, getOverallProgress } from '../utils/learning';
+import { formatDayCount, getCourseProgress, getOverallProgress } from '../utils/learning';
 
 export function ProfilePage() {
   const { progress, levelInfo } = useProgress();
@@ -54,7 +54,7 @@ export function ProfilePage() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-xs leading-5 text-muted">Bester Streak bisher: {progress.bestStreak} Tage · {progress.quizCorrectTotal} richtige Quizantworten</p>
+        <p className="mt-4 text-xs leading-5 text-muted">Bester Streak bisher: {formatDayCount(progress.bestStreak)} · {progress.quizCorrectTotal} richtige Quizantworten</p>
         </section>
       </div>
       <div className="mt-5 grid gap-3 lg:grid-cols-3">

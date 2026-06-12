@@ -17,6 +17,10 @@ export function isLessonCompleted(progress: UserProgress, courseId: LanguageId, 
   return progress.completedLessons[courseId]?.includes(lessonId) ?? false;
 }
 
+export function formatDayCount(count: number) {
+  return `${count} ${count === 1 ? 'Tag' : 'Tage'}`;
+}
+
 export function isFillBlankAnswerCorrect(input: string, answer: string) {
   const normalize = (value: string) => value.trim().toLowerCase().replace(/^["'<@(]+/, '').replace(/[>"':;=()[\]]+$/, '');
   const normalizedInput = normalize(input);
