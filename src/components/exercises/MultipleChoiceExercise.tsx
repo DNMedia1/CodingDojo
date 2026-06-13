@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Exercise, ReviewRating } from '../../models/learning';
 import { evaluateExerciseAnswer, type ExerciseResult } from '../../services/exerciseEvaluationService';
+import { CodeBlock } from '../CodeBlock';
 
 type MultipleChoiceExerciseProps = {
   exercise: Exercise;
@@ -14,6 +15,7 @@ export function MultipleChoiceExercise({ exercise, onAnswered }: MultipleChoiceE
   return (
     <div>
       <h2 className="font-extrabold">{exercise.prompt}</h2>
+      {exercise.code ? <CodeBlock code={exercise.code} className="mt-3" /> : null}
       <div className="mt-3 space-y-2">
         {(exercise.options ?? []).map((option) => {
           const isSelected = selectedAnswer === option.text;
