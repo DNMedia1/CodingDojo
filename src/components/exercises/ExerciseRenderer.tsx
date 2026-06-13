@@ -1,6 +1,7 @@
 import type { Exercise, ReviewRating } from '../../models/learning';
 import type { ExerciseResult } from '../../services/exerciseEvaluationService';
 import { CodeCompletionExercise } from './CodeCompletionExercise';
+import { FillBlankExercise } from './FillBlankExercise';
 import { MultipleChoiceExercise } from './MultipleChoiceExercise';
 import { OrderingExercise } from './OrderingExercise';
 
@@ -26,6 +27,10 @@ export function ExerciseRenderer({ exercise, onAnswered }: ExerciseRendererProps
   const orderingSteps = getOrderingSteps(exercise);
   if (orderingSteps.length >= 2) {
     return <OrderingExercise exercise={exercise} steps={orderingSteps} onAnswered={onAnswered} />;
+  }
+
+  if ((exercise.type === 'fill_blank' || exercise.type === 'short_answer') && exercise.expectedAnswer) {
+    return <FillBlankExercise exercise={exercise} onAnswered={onAnswered} />;
   }
 
   if (exercise.options?.length) {

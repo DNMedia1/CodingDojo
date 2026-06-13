@@ -5,7 +5,7 @@ import { ExerciseRenderer } from '../components/exercises/ExerciseRenderer';
 import { ProgressBar } from '../components/ProgressBar';
 import { getLesson, courses } from '../data/courses';
 import type { BadgeDefinition, DailyQuest, Exercise } from '../models/learning';
-import { loadOpenRouterApiKey, requestCodeHint, saveOpenRouterApiKey } from '../services/aiHintService';
+import { AI_HINT_LEVELS, loadOpenRouterApiKey, requestCodeHint, saveOpenRouterApiKey, type AiHintLevelId } from '../services/aiHintService';
 import { getNewlyEarnedBadges } from '../services/badgeService';
 import { getEarnedBoosts, getSpentBoosts, spendBoost, LESSONS_PER_BOOST } from '../services/boostService';
 import { clearLessonPage, loadLessonPage, saveLessonPage } from '../services/lessonResumeService';
@@ -13,7 +13,7 @@ import { evaluateCode, type CodeFeedback } from '../services/codeFeedbackService
 import { calculateLevel, completeLesson as computeLessonCompletion, getDailyQuests } from '../services/progressService';
 import { useLearningActivity } from '../store/LearningActivityContext';
 import { useProgress } from '../store/ProgressContext';
-import { formatDayCount, isFillBlankAnswerCorrect, isLessonCompleted } from '../utils/learning';
+import { formatDayCount, isLessonCompleted } from '../utils/learning';
 import { Header } from '../components/Header';
 
 type FinishResult = {
@@ -31,7 +31,6 @@ type PlayerPage =
   | { kind: 'intro' }
   | { kind: 'knowledge'; index: number }
   | { kind: 'code' }
-  | { kind: 'blank' }
   | { kind: 'exercise'; exercise: Exercise }
   | { kind: 'coding' }
   | { kind: 'practice' };
@@ -59,10 +58,8 @@ export function LessonPage() {
   const [exerciseResults, setExerciseResults] = useState<Record<string, boolean>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [codeFeedback, setCodeFeedback] = useState<Record<string, CodeFeedback>>({});
-  const [blankInputs, setBlankInputs] = useState<Record<string, string>>({});
-  const [blankResults, setBlankResults] = useState<Record<string, 'correct' | 'wrong'>>({});
-  const [blankAttempts, setBlankAttempts] = useState<Record<string, number>>({});
   const [openRouterKey, setOpenRouterKey] = useState(() => loadOpenRouterApiKey());
+  const [aiHintLevel, setAiHintLevel] = useState<AiHintLevelId>('nudge');
   const [aiHint, setAiHint] = useState('');
   const [aiHintError, setAiHintError] = useState('');
   const [aiHintLoading, setAiHintLoading] = useState(false);
@@ -73,30 +70,31 @@ export function LessonPage() {
   // alternate with small tasks, then code reading, gap fill, remaining tasks.
   const pages = useMemo<PlayerPage[]>(() => {
     if (!lesson) return [];
-    const taskPool = lesson.exercises.filter((exercise) => exercise.type !== 'fill_blank' && exercise.type !== 'short_answer');
+    const isBlank = (exercise: Exercise) => exercise.type === 'fill_blank' || exercise.type === 'short_answer';
+    const interactiveTasks = lesson.exercises.filter((exercise) => !isBlank(exercise));
+    const blankTasks = lesson.exercises.filter(isBlank);
     const items: PlayerPage[] = [{ kind: 'intro' }];
-    const interleaved = Math.min(lesson.knowledge.length, taskPool.length);
+    const interleaved = Math.min(lesson.knowledge.length, interactiveTasks.length);
     lesson.knowledge.forEach((_, index) => {
       items.push({ kind: 'knowledge', index });
-      if (index < interleaved) items.push({ kind: 'exercise', exercise: taskPool[index] });
+      if (index < interleaved) items.push({ kind: 'exercise', exercise: interactiveTasks[index] });
     });
-    items.push({ kind: 'code' }, { kind: 'blank' });
-    taskPool.slice(interleaved).forEach((exercise) => items.push({ kind: 'exercise', exercise }));
+    items.push({ kind: 'code' });
+    // Gap-fill tasks land right after reading the code example, then the rest.
+    blankTasks.forEach((exercise) => items.push({ kind: 'exercise', exercise }));
+    interactiveTasks.slice(interleaved).forEach((exercise) => items.push({ kind: 'exercise', exercise }));
     if (lesson.codingChallenge) items.push({ kind: 'coding' });
     items.push({ kind: 'practice' });
     return items;
   }, [lesson]);
 
   if (!lesson || !course) return <Header title="Lektion nicht gefunden" subtitle="Gehe zu einem Kurs und wähle eine andere Lektion." />;
-  const quizExercises = lesson.exercises.filter((exercise) => exercise.type !== 'fill_blank' && exercise.type !== 'short_answer');
-  const quizComplete = quizExercises.every((exercise) => answeredExercises[exercise.id]);
-  const correctCount = quizExercises.filter((exercise) => exerciseResults[exercise.id]).length;
+  const taskExercises = lesson.exercises;
+  const tasksComplete = taskExercises.every((exercise) => answeredExercises[exercise.id]);
+  const correctCount = taskExercises.filter((exercise) => exerciseResults[exercise.id]).length;
   const codeValue = lesson.codingChallenge ? (codeDrafts[lesson.id] ?? lesson.codingChallenge.starterCode) : '';
   const feedback = codeFeedback[lesson.id];
   const codingComplete = !lesson.codingChallenge || feedback?.status === 'correct' || completed;
-  const blankValue = blankInputs[lesson.id] ?? '';
-  const blankState = blankResults[lesson.id];
-  const blankComplete = blankState === 'correct' || completed;
   const courseLessons = course.modules.flatMap((module) => module.lessons);
   const nextLesson = courseLessons[courseLessons.findIndex((item) => item.id === lesson.id) + 1];
 
@@ -107,7 +105,7 @@ export function LessonPage() {
   const exercisePages = pages.filter((item): item is Extract<PlayerPage, { kind: 'exercise' }> => item.kind === 'exercise');
   const canAdvance =
     completed ||
-    (page.kind === 'exercise' ? Boolean(answeredExercises[page.exercise.id]) : page.kind === 'blank' ? blankComplete : true);
+    (page.kind === 'exercise' ? Boolean(answeredExercises[page.exercise.id]) : true);
 
   const goTo = (index: number) => {
     const next = Math.max(0, Math.min(pages.length - 1, index));
@@ -170,7 +168,8 @@ export function LessonPage() {
         language: lesson.codingChallenge.language,
         challengePrompt: lesson.codingChallenge.prompt,
         code: codeValue,
-        localFeedback: feedback ? `${feedback.title}: ${feedback.message} ${feedback.hints.join(' ')}` : ''
+        localFeedback: feedback ? `${feedback.title}: ${feedback.message} ${feedback.hints.join(' ')}` : '',
+        hintLevel: aiHintLevel
       });
       setAiHint(hint);
     } catch (error) {
@@ -178,17 +177,6 @@ export function LessonPage() {
     } finally {
       setAiHintLoading(false);
     }
-  };
-
-  const checkBlank = () => {
-    const correct = isFillBlankAnswerCorrect(blankValue, lesson.fillBlank.answer);
-    setBlankResults((current) => ({ ...current, [lesson.id]: correct ? 'correct' : 'wrong' }));
-    if (!correct) setBlankAttempts((current) => ({ ...current, [lesson.id]: (current[lesson.id] ?? 0) + 1 }));
-  };
-
-  const revealBlank = () => {
-    setBlankInputs((current) => ({ ...current, [lesson.id]: lesson.fillBlank.answer }));
-    setBlankResults((current) => ({ ...current, [lesson.id]: 'correct' }));
   };
 
   const goToNextLesson = () => {
@@ -295,47 +283,6 @@ export function LessonPage() {
           </div>
         ) : null}
 
-        {page.kind === 'blank' ? (
-          <div>
-            <h2 className="text-xl font-black">Fülle die Lücke</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">{lesson.fillBlank.instruction}</p>
-            <pre className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-ink p-4 text-sm leading-6 text-sky-100"><code>{lesson.fillBlank.code}</code></pre>
-            <input
-              value={blankValue}
-              spellCheck={false}
-              autoCapitalize="none"
-              autoCorrect="off"
-              placeholder="____"
-              onChange={(event) => {
-                setBlankInputs((current) => ({ ...current, [lesson.id]: event.target.value }));
-                setBlankResults((current) => {
-                  const next = { ...current };
-                  delete next[lesson.id];
-                  return next;
-                });
-              }}
-              className={`mt-4 min-h-12 w-full rounded-2xl border bg-ink px-4 font-mono text-sm outline-none ${
-                blankState === 'correct' ? 'border-emerald-300/60' : blankState === 'wrong' ? 'border-red-300/60' : 'border-white/10 focus:border-sky-300'
-              }`}
-            />
-            {blankState === 'correct' ? (
-              <p className="mt-3 rounded-2xl border border-emerald-300/40 bg-emerald-300/10 p-4 text-sm font-bold leading-6 text-emerald-100">
-                Richtig! Genau dieser Baustein macht das Beispiel vollständig.
-              </p>
-            ) : null}
-            {blankState === 'wrong' ? (
-              <div className="mt-3 rounded-2xl border border-yellow-300/40 bg-yellow-300/10 p-4">
-                <p className="text-sm leading-6 text-yellow-100">Noch nicht ganz. {lesson.fillBlank.hint}</p>
-                {(blankAttempts[lesson.id] ?? 0) >= 2 ? (
-                  <button onClick={revealBlank} className="mt-3 min-h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-bold">
-                    Lösung anzeigen
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
         {page.kind === 'coding' ? (
           <div>
             <div className="flex items-start gap-3">
@@ -390,8 +337,29 @@ export function LessonPage() {
                     </div>
                     <div>
                       <h3 className="font-extrabold">KI-Hilfe</h3>
-                      <p className="mt-1 text-sm leading-6 text-muted">OpenRouter gibt nur Hinweise zur nächsten Idee, keine komplette Lösung.</p>
+                      <p className="mt-1 text-sm leading-6 text-muted">OpenRouter hilft stufenweise: erst ein kleiner Hinweis, dann ein Denkansatz, zuletzt eine Fehlerstelle. Keine komplette Lösung.</p>
                     </div>
+                  </div>
+                  <div className="mt-4 grid gap-2 lg:grid-cols-3">
+                    {AI_HINT_LEVELS.map((level) => (
+                      <button
+                        key={level.id}
+                        type="button"
+                        onClick={() => {
+                          setAiHintLevel(level.id);
+                          setAiHint('');
+                          setAiHintError('');
+                        }}
+                        className={`rounded-2xl border p-3 text-left transition ${
+                          aiHintLevel === level.id
+                            ? 'border-yellow-200/70 bg-yellow-200/15 text-yellow-50'
+                            : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="block text-sm font-black">{level.label}</span>
+                        <span className="mt-1 block text-xs leading-5 text-muted">{level.description}</span>
+                      </button>
+                    ))}
                   </div>
                   <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <input
@@ -407,7 +375,7 @@ export function LessonPage() {
                     </button>
                   </div>
                   <button onClick={askAiForHint} disabled={aiHintLoading} className="mt-3 min-h-12 w-full rounded-2xl bg-yellow-200 px-4 font-extrabold text-ink disabled:opacity-50">
-                    {aiHintLoading ? 'KI denkt nach...' : 'Hinweis anfordern'}
+                    {aiHintLoading ? 'KI denkt nach...' : `${AI_HINT_LEVELS.find((level) => level.id === aiHintLevel)?.label ?? 'Hinweis'} anfordern`}
                   </button>
                   {aiHint ? <p className="mt-3 whitespace-pre-line rounded-2xl border border-yellow-300/30 bg-yellow-300/10 p-4 text-sm leading-6 text-yellow-50">{aiHint}</p> : null}
                   {aiHintError ? <p className="mt-3 rounded-2xl border border-red-300/40 bg-red-300/10 p-4 text-sm leading-6 text-red-100">{aiHintError}</p> : null}
@@ -428,17 +396,16 @@ export function LessonPage() {
               ))}
             </ul>
             <p className="mt-4 rounded-2xl bg-white/5 p-4 text-sm leading-6 text-sky-100">Hinweis: {lesson.practice.hint}</p>
-            {quizComplete ? (
+            {tasksComplete ? (
               <div className="mt-4 rounded-2xl border border-emerald-300/40 bg-emerald-300/10 p-4 text-center">
-                <p className="font-extrabold text-emerald-100">Aufgaben: {correctCount}/{quizExercises.length} richtig</p>
+                <p className="font-extrabold text-emerald-100">Aufgaben: {correctCount}/{taskExercises.length} richtig</p>
                 <p className="mt-1 text-sm leading-6 text-muted">Falsch beantwortete Aufgaben landen automatisch in deiner Wiederholung.</p>
               </div>
             ) : null}
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
               <p className="text-sm font-extrabold">Zum Abschließen</p>
               <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
-                <li>{blankComplete ? '✓' : '·'} Lücke lösen</li>
-                <li>{quizComplete ? '✓' : '·'} Alle Aufgaben beantworten</li>
+                <li>{tasksComplete ? '✓' : '·'} Alle Aufgaben beantworten</li>
                 <li>{codingComplete ? '✓' : '·'} Code-Check bestehen</li>
               </ul>
             </div>
@@ -461,17 +428,9 @@ export function LessonPage() {
               <Zap size={16} /> Skippen
             </button>
           ) : null}
-          {page.kind === 'blank' && !blankComplete ? (
+          {isLastPage ? (
             <button
-              onClick={checkBlank}
-              disabled={blankValue.trim().length === 0}
-              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-300 font-extrabold text-ink disabled:opacity-40"
-            >
-              Überprüfen
-            </button>
-          ) : isLastPage ? (
-            <button
-              disabled={(!quizComplete || !codingComplete || !blankComplete) && !completed}
+              disabled={(!tasksComplete || !codingComplete) && !completed}
               onClick={finish}
               className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-300 font-extrabold text-ink disabled:opacity-40"
             >
