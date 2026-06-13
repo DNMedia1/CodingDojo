@@ -8,10 +8,21 @@ import { sql } from '@codemirror/lang-sql';
 import { type Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { basicSetup } from 'codemirror';
-import { Code2, RotateCcw, Sparkles } from 'lucide-react';
+import { CheckCircle2, Code2, FileCode2, ListChecks, RotateCcw, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PracticeProject } from '../models/learning';
-import { getProjectIdeConfig, type IdeLanguageId, type ProjectIdeCompletion } from '../services/projectIdeService';
+import {
+  getProjectFileCompletionSource,
+  getProjectIdeConfig,
+  getProjectRequirementItems,
+  loadProjectWorkspace,
+  saveProjectWorkspace,
+  setProjectWorkspaceActiveFile,
+  toggleProjectRequirement,
+  updateProjectWorkspaceFile,
+  type IdeLanguageId,
+  type ProjectIdeCompletion
+} from '../services/projectIdeService';
 
 interface ProjectIdeProps {
   project: PracticeProject;
@@ -19,16 +30,28 @@ interface ProjectIdeProps {
 
 export function ProjectIde({ project }: ProjectIdeProps) {
   const config = useMemo(() => getProjectIdeConfig(project), [project]);
-  const storageKey = `devpath-project-code:${project.id}`;
-  const [code, setCode] = useState(() => loadProjectCode(storageKey) || config.starterCode);
+  const requirementItems = useMemo(() => getProjectRequirementItems(project), [project]);
+  const [workspace, setWorkspace] = useState(() => loadProjectWorkspace(project));
+  const activeFile = config.files.find((file) => file.id === workspace.activeFileId) ?? config.files[0];
+  const activeCode = workspace.files[activeFile.id] ?? activeFile.starterCode;
+  const activeCompletions = useMemo(() => getProjectFileCompletionSource(project, activeFile), [activeFile, project]);
+  const completedRequirementCount = requirementItems.filter((requirement) => workspace.completedRequirementIds.includes(requirement.id)).length;
 
   useEffect(() => {
-    setCode(loadProjectCode(storageKey) || config.starterCode);
-  }, [config.starterCode, storageKey]);
+    setWorkspace(loadProjectWorkspace(project));
+  }, [project]);
 
   useEffect(() => {
-    saveProjectCode(storageKey, code);
-  }, [code, storageKey]);
+    saveProjectWorkspace(project.id, workspace);
+  }, [project.id, workspace]);
+
+  const updateActiveCode = (code: string) => {
+    setWorkspace((current) => updateProjectWorkspaceFile(current, activeFile.id, code));
+  };
+
+  const resetActiveFile = () => {
+    setWorkspace((current) => updateProjectWorkspaceFile(current, activeFile.id, activeFile.starterCode));
+  };
 
   return (
     <section className="mt-4 overflow-hidden rounded-3xl border border-white/10 bg-[#08111d]">
@@ -38,26 +61,91 @@ export function ProjectIde({ project }: ProjectIdeProps) {
             <Code2 size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">{config.displayLanguage}</p>
-            <h3 className="truncate text-sm font-black text-text">{config.fileName}</h3>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">{activeFile.displayLanguage}</p>
+            <h3 className="truncate text-sm font-black text-text">{activeFile.fileName}</h3>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => setCode(config.starterCode)}
+          onClick={resetActiveFile}
           className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-xs font-black text-slate-200 transition hover:bg-white/10"
         >
           <RotateCcw size={16} />
-          Zurücksetzen
+          Datei zurücksetzen
         </button>
       </div>
 
-      <CodeMirrorEditor code={code} language={config.language} completions={config.completions} onChange={setCode} />
+      <div className="flex gap-2 overflow-x-auto border-b border-white/10 bg-white/[0.02] p-2">
+        {config.files.map((file) => (
+          <button
+            key={file.id}
+            type="button"
+            onClick={() => setWorkspace((current) => setProjectWorkspaceActiveFile(current, file.id))}
+            className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-2xl border px-3 text-xs font-black transition ${
+              activeFile.id === file.id
+                ? 'border-sky-300/60 bg-sky-300/15 text-sky-100'
+                : 'border-white/10 bg-white/5 text-muted hover:bg-white/10'
+            }`}
+          >
+            <FileCode2 size={15} />
+            {file.fileName}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <CodeMirrorEditor code={activeCode} language={activeFile.language} completions={activeCompletions} onChange={updateActiveCode} />
+        </div>
+        <aside className="border-t border-white/10 bg-white/[0.03] p-4 lg:border-l lg:border-t-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ListChecks size={18} className="text-sky-200" />
+              <h3 className="text-sm font-black">Aufgaben</h3>
+            </div>
+            <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-black text-muted">
+              {completedRequirementCount}/{requirementItems.length}
+            </span>
+          </div>
+
+          <div className="mt-3 grid gap-2">
+            {requirementItems.map((requirement) => {
+              const done = workspace.completedRequirementIds.includes(requirement.id);
+              return (
+                <button
+                  key={requirement.id}
+                  type="button"
+                  onClick={() => setWorkspace((current) => toggleProjectRequirement(current, requirement.id))}
+                  className={`flex min-h-12 items-start gap-2 rounded-2xl border p-3 text-left text-sm leading-5 transition ${
+                    done ? 'border-emerald-300/50 bg-emerald-300/10 text-emerald-100' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                  }`}
+                >
+                  <CheckCircle2 size={17} className={`mt-0.5 shrink-0 ${done ? 'text-emerald-200' : 'text-muted'}`} />
+                  <span>{requirement.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <details className="mt-4 border-t border-white/10 pt-4">
+            <summary className="cursor-pointer text-sm font-black">Hinweise</summary>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+              {project.hints.map((hint) => <li key={hint}>{hint}</li>)}
+            </ul>
+          </details>
+          <details className="mt-4 border-t border-white/10 pt-4">
+            <summary className="cursor-pointer text-sm font-black">Lösungsnotizen anzeigen</summary>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+              {project.solutionNotes.map((note) => <li key={note}>{note}</li>)}
+            </ul>
+          </details>
+        </aside>
+      </div>
 
       <div className="flex flex-wrap items-start gap-2 border-t border-white/10 bg-white/[0.03] p-3 text-xs leading-5 text-muted">
         <Sparkles size={16} className="mt-0.5 shrink-0 text-sky-200" />
         <span>
-          Autocomplete ist auf {config.displayLanguage} begrenzt. Drücke <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-slate-200">Ctrl</kbd> +{' '}
+          Autocomplete ist auf {activeFile.displayLanguage} begrenzt. Drücke <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-slate-200">Ctrl</kbd> +{' '}
           <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] text-slate-200">Space</kbd> oder beginne zu tippen.
         </span>
       </div>
@@ -156,16 +244,6 @@ function languageExtensions(language: IdeLanguageId): Extension[] {
   if (language === 'typescript') return [javascript({ typescript: true })];
   if (language === 'tsx') return [javascript({ jsx: true, typescript: true })];
   return [];
-}
-
-function loadProjectCode(storageKey: string) {
-  if (typeof localStorage === 'undefined') return '';
-  return localStorage.getItem(storageKey) ?? '';
-}
-
-function saveProjectCode(storageKey: string, code: string) {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(storageKey, code);
 }
 
 const editorTheme = EditorView.theme(
