@@ -16,8 +16,8 @@ describe('CodingDojo critical learning flows', () => {
     cy.viewport('iphone-6');
     cy.visit('/');
 
-    cy.contains('Start').should('be.visible');
-    cy.contains('Kurse').should('be.visible');
+    cy.contains('.nav-item', 'Start').should('be.visible');
+    cy.contains('.nav-item', 'Kurse').should('be.visible');
     cy.window().then((window) => {
       const { documentElement } = window.document;
       expect(documentElement.scrollWidth).to.be.at.most(documentElement.clientWidth);
